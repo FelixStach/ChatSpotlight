@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Deque, Dict, List, Optional, Set, Tuple
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import Body, FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -485,6 +485,28 @@ async def channel_info() -> Dict[str, str]:
     return {"channel": clean}
 
 
+@app.post("/api/custom-message")
+async def custom_message(body: Dict[str, Any] = Body(...)) -> Dict[str, str]:
+    if not isinstance(body, dict):
+        raise HTTPException(status_code=400, detail="Invalid payload")
+
+    raw_user = (body.get("user") or "Guest").strip()
+    raw_text = (body.get("text") or "").strip()
+
+    if not raw_text:
+        raise HTTPException(status_code=400, detail="text is required")
+
+    user = raw_user[:48] if raw_user else "Guest"
+    text = raw_text[:500]
+
+    payload = build_message_payload(user=user, text=text)
+    payload["custom"] = True
+
+    await broadcast_message(payload)
+    return {"status": "ok", "id": payload["id"]}
+
+
 if PREFIX:
     # Alternate path for deployments served from a subdirectory.
     app.add_api_route(f"{PREFIX}/api/channel", channel_info, methods=["GET"])
+    app.add_api_route(f"{PREFIX}/api/custom-message", custom_message, methods=["POST"])

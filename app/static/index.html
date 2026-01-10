@@ -87,6 +87,101 @@
       overflow: hidden;
     }
 
+    .custom-form {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      margin-top: auto;
+      padding-top: 0.75rem;
+    }
+
+    .role-toggle {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.5rem;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--panel-border);
+      border-radius: 14px;
+      padding: 0.25rem;
+      width: 100%;
+    }
+
+    .role-option {
+      position: relative;
+      padding: 0.45rem 0.9rem;
+      border-radius: 10px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+      text-align: center;
+    }
+
+    .role-option input {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .role-option--active {
+      background: rgba(88, 221, 161, 0.18);
+      border-color: rgba(88, 221, 161, 0.4);
+      color: #b3f2d8;
+      box-shadow: 0 8px 18px rgba(88, 221, 161, 0.24);
+    }
+
+    .message-box {
+      position: relative;
+    }
+
+    .custom-textarea {
+      width: 100%;
+      min-height: clamp(96px, 20vh, 140px);
+      resize: vertical;
+      padding: 1rem 3.25rem 1rem 1rem;
+      border-radius: 16px;
+      border: 1px solid var(--panel-border);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-primary);
+      line-height: 1.5;
+      font-size: 1rem;
+      font-family: inherit;
+      font-weight: 500;
+    }
+
+    .custom-textarea::placeholder {
+      color: var(--text-muted);
+      font-style: normal;
+    }
+
+    .custom-submit {
+      position: absolute;
+      right: 0.6rem;
+      bottom: 0.6rem;
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      border: 1px solid rgba(88, 221, 161, 0.4);
+      background: linear-gradient(135deg, rgba(88, 221, 161, 0.2), rgba(40, 70, 58, 0.7));
+      color: #b3f2d8;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 120ms ease, box-shadow 160ms ease;
+    }
+
+    .custom-submit:hover {
+      box-shadow: 0 10px 24px rgba(88, 221, 161, 0.3);
+    }
+
+    .custom-submit:active {
+      transform: translateY(1px);
+    }
+
     .chat-header {
       text-align: center;
       margin-bottom: 0.75rem;
@@ -102,6 +197,7 @@
     #chat-stream {
       list-style: none;
       overflow-y: auto;
+      overflow-x: hidden;
       scroll-behavior: smooth;
       display: flex;
       flex-direction: column;
@@ -129,6 +225,12 @@
       background-color: rgba(255, 255, 255, 0.06);
     }
 
+    .chat-message--custom {
+      border-color: rgba(88, 221, 161, 0.35);
+      background: rgba(88, 221, 161, 0.12);
+      box-shadow: 0 16px 32px rgba(88, 221, 161, 0.18);
+    }
+
     .chat-message:active {
       transform: scale(0.99);
     }
@@ -152,6 +254,8 @@
       font-size: 1rem;
       line-height: 1.45;
       margin: 0;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
 
     .timestamp {
@@ -202,10 +306,33 @@
       background: linear-gradient(135deg, rgba(248, 212, 119, 0.32), rgba(35, 45, 90, 0.95));
     }
 
+    .queue-item--custom {
+      border-color: rgba(88, 221, 161, 0.45);
+      background: linear-gradient(135deg, rgba(88, 221, 161, 0.18), rgba(18, 39, 32, 0.8));
+    }
+
+    .queue-item--custom.queue-item--highlighted {
+      border-color: rgba(131, 243, 196, 0.9);
+      box-shadow: 0 18px 44px rgba(131, 243, 196, 0.45);
+      background: linear-gradient(135deg, rgba(131, 243, 196, 0.35), rgba(18, 39, 32, 0.92));
+    }
+
+    .queue-item--custom.queue-item--pinned {
+      border-color: rgba(255, 158, 94, 0.9);
+      box-shadow: 0 20px 48px rgba(255, 158, 94, 0.48);
+      background: linear-gradient(135deg, rgba(255, 158, 94, 0.32), rgba(60, 32, 20, 0.9));
+    }
+
     .queue-item--pinned {
       border-color: rgba(255, 105, 97, 0.9);
       box-shadow: 0 20px 48px rgba(255, 105, 97, 0.5);
       background: linear-gradient(135deg, rgba(255, 105, 97, 0.26), rgba(40, 30, 38, 0.98));
+    }
+
+    .queue-item--custom.queue-item--pinned {
+      border-color: rgba(255, 165, 111, 0.95);
+      box-shadow: 0 22px 52px rgba(255, 165, 111, 0.55);
+      background: linear-gradient(135deg, rgba(255, 187, 133, 0.4), rgba(52, 32, 22, 0.96));
     }
 
     .queue-meta {
@@ -356,6 +483,7 @@
       .queue-text {
         max-height: none;
         display: -webkit-box;
+        line-clamp: 6;
         -webkit-line-clamp: 6;
         -webkit-box-orient: vertical;
         overflow: hidden;
@@ -408,6 +536,29 @@
         <h2 id="channel-name" class="chat-title">Loading channel…</h2>
       </div>
       <ul id="chat-stream" aria-live="polite" aria-label="Twitch chat messages"></ul>
+      <form id="custom-message-form" class="custom-form" autocomplete="off">
+        <div class="role-toggle" role="group" aria-label="Sender identity">
+          <label class="role-option role-option--active">
+            <input type="radio" name="custom-role" value="Live Zuschauer" checked />
+            Live Zuschauer
+          </label>
+          <label class="role-option">
+            <input type="radio" name="custom-role" value="Intern" />
+            Intern
+          </label>
+        </div>
+        <div class="message-box">
+          <textarea
+            id="custom-text"
+            class="custom-textarea"
+            name="text"
+            placeholder="Teile deine Nachricht"
+            maxlength="500"
+            required
+          ></textarea>
+          <button class="custom-submit" type="submit" aria-label="Nachricht senden">&gt;</button>
+        </div>
+      </form>
     </section>
   </main>
 
@@ -442,9 +593,13 @@
     const queueList = document.querySelector('#spotlight-queue');
     const queueTemplate = document.querySelector('#queue-template');
     const channelTitle = document.querySelector('#channel-name');
+    const customForm = document.querySelector('#custom-message-form');
+    const customTextArea = document.querySelector('#custom-text');
+    const roleInputs = document.querySelectorAll('input[name="custom-role"]');
 
     const baseUrl = new URL('.', window.location.href);
     const apiChannelUrl = new URL('api/channel', baseUrl);
+    const apiCustomMessageUrl = new URL('api/custom-message', baseUrl);
     const wsUrl = new URL('ws/chat', baseUrl);
     wsUrl.protocol = wsUrl.protocol === 'https:' ? 'wss:' : 'ws:';
     const socket = new WebSocket(wsUrl);
@@ -533,6 +688,7 @@
         timestamp: raw.timestamp ?? new Date(timestampMs).toISOString(),
         timestampMs,
         highlighted: Boolean(raw.highlighted),
+          custom: Boolean(raw.custom),
       };
     }
 
@@ -556,6 +712,7 @@
       node.querySelector('.badge').textContent = message.user;
       node.querySelector('.text').textContent = message.text;
       node.querySelector('.timestamp').textContent = formatClockTime(message.timestampMs);
+      node.classList.toggle('chat-message--custom', message.custom === true);
       node.addEventListener('click', () => requestHighlight(message.id, { source: 'chat' }));
 
       chatStream.appendChild(node);
@@ -666,6 +823,7 @@
           node.addEventListener('click', () => requestHighlight(payload.id));
           node.classList.toggle('queue-item--highlighted', payload.highlighted === true);
           node.classList.toggle('queue-item--pinned', isPinned);
+          node.classList.toggle('queue-item--custom', message?.custom === true || payload.custom === true);
         } else {
           node.classList.add('queue-item--empty');
           userEl.textContent = '';
@@ -760,6 +918,41 @@
         console.warn('Unable to load channel name', err);
       }
       channelTitle.textContent = 'channel';
+    }
+
+    if (customForm && customTextArea) {
+      const syncRoleActive = () => {
+        const active = Array.from(roleInputs).find((input) => input.checked);
+        roleInputs.forEach((input) => {
+          const label = input.closest('.role-option');
+          if (!label) return;
+          label.classList.toggle('role-option--active', input === active);
+        });
+      };
+
+      roleInputs.forEach((input) => {
+        input.addEventListener('change', syncRoleActive);
+      });
+      syncRoleActive();
+
+      customForm.addEventListener('submit', async (evt) => {
+        evt.preventDefault();
+        const text = customTextArea.value.trim();
+        const user = (Array.from(roleInputs).find((input) => input.checked)?.value || 'Live Zuschauer').trim();
+        if (!text) return;
+
+        try {
+          const resp = await fetch(apiCustomMessageUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text, user }),
+          });
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          customTextArea.value = '';
+        } catch (err) {
+          console.warn('Failed to send custom message', err);
+        }
+      });
     }
   </script>
 </body>
