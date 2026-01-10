@@ -97,7 +97,6 @@
       font-size: clamp(1rem, 1.2vw, 1.35rem);
       font-weight: 600;
       color: var(--text-muted);
-      text-transform: uppercase;
     }
 
     #chat-stream {
@@ -754,13 +753,13 @@
         const data = await resp.json();
         const name = (data?.channel ?? '').toString().trim();
         if (name) {
-          channelTitle.textContent = `#${name.replace(/^#/, '')}`;
+          channelTitle.textContent = name.replace(/^#/, '');
           return;
         }
       } catch (err) {
         console.warn('Unable to load channel name', err);
       }
-      channelTitle.textContent = '#channel';
+      channelTitle.textContent = 'channel';
     }
   </script>
 </body>

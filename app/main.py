@@ -447,7 +447,7 @@ async def startup_event() -> None:
     if USE_FAKE_STREAM:
         app.state.chat_task = asyncio.create_task(fake_chat_loop())
         mode = "fake"
-        CHANNEL_NAME = os.getenv("FAKE_CHANNEL", "demo")
+        CHANNEL_NAME = os.getenv("FAKE_CHANNEL", "demo").lstrip("#")
     else:
         username = required_file(USERNAME_FILE, "Twitch username")
         token = required_file(TOKEN_FILE, "Twitch OAuth token")
