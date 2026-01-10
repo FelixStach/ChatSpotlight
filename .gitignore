@@ -2,3 +2,8 @@
 app/config/channel.txt
 app/config/oauth_token.txt
 app/config/username.txt
+
+# Local development artifacts
+.venv/
+__pycache__/
+*.py[cod]

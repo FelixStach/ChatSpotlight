@@ -26,9 +26,15 @@ HISTORY_LIMIT = 100
 RETRY_DELAY_SECONDS = 5
 USE_FAKE_STREAM = False#os.getenv("FAKE_CHAT_MODE", "0").lower() in {"1", "true", "yes", "on"}
 TOTAL_QUEUE_SLOTS = 3
+CHANNEL_NAME: Optional[str] = None
+PATH_PREFIX = os.getenv("PATH_PREFIX", "").strip("/")
+PREFIX = f"/{PATH_PREFIX}" if PATH_PREFIX else ""
 
 app = FastAPI(title="Twitch Chat Helper", version="1.0.0")
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+if PREFIX:
+    # Serve static files under the prefixed path for reverse-proxy setups.
+    app.mount(f"{PREFIX}/static", StaticFiles(directory=STATIC_DIR), name="static-prefixed")
 
 recent_messages: Deque[Dict[str, Any]] = deque(maxlen=HISTORY_LIMIT)
 message_lookup: Dict[str, Dict[str, Any]] = {}
@@ -96,6 +102,11 @@ async def root() -> FileResponse:
     return FileResponse(STATIC_DIR / "index.html")
 
 
+if PREFIX:
+    # Mirror the root route under the path prefix so proxied deployments work.
+    app.add_api_route(f"{PREFIX}/", root, methods=["GET"], include_in_schema=False)
+
+
 @app.websocket("/ws/chat")
 async def websocket_endpoint(websocket: WebSocket) -> None:
     await manager.connect(websocket)
@@ -112,6 +123,11 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
     except Exception:
         await manager.disconnect(websocket)
         raise
+
+
+if PREFIX:
+    # Expose the websocket under the prefixed path for reverse proxies.
+    app.router.add_websocket_route(f"{PREFIX}/ws/chat", websocket_endpoint)
 
 
 def build_message_payload(user: str, text: str) -> Dict[str, Any]:
@@ -427,15 +443,19 @@ async def fake_chat_loop() -> None:
 
 @app.on_event("startup")
 async def startup_event() -> None:
+    global CHANNEL_NAME
     if USE_FAKE_STREAM:
         app.state.chat_task = asyncio.create_task(fake_chat_loop())
         mode = "fake"
+        CHANNEL_NAME = os.getenv("FAKE_CHANNEL", "demo")
     else:
         username = required_file(USERNAME_FILE, "Twitch username")
         token = required_file(TOKEN_FILE, "Twitch OAuth token")
         channel = required_file(CHANNEL_FILE, "Twitch channel")
+        CHANNEL_NAME = channel.lstrip("#")
         app.state.chat_task = asyncio.create_task(twitch_chat_loop(username, token, channel))
         mode = "twitch"
+    app.state.channel_name = CHANNEL_NAME
     logging.info("Chat stream started in %s mode", mode)
 
 
@@ -447,3 +467,24 @@ async def shutdown_event() -> None:
         await task
     except asyncio.CancelledError:
         pass
+
+
+@app.get("/api/channel")
+async def channel_info() -> Dict[str, str]:
+    channel = getattr(app.state, "channel_name", None)
+    if not channel:
+        channel = CHANNEL_NAME
+    if not channel:
+        try:
+            channel = required_file(CHANNEL_FILE, "Twitch channel")
+        except RuntimeError:
+            channel = "unknown"
+
+    clean = channel.lstrip("#")
+    app.state.channel_name = clean
+    return {"channel": clean}
+
+
+if PREFIX:
+    # Alternate path for deployments served from a subdirectory.
+    app.add_api_route(f"{PREFIX}/api/channel", channel_info, methods=["GET"])
