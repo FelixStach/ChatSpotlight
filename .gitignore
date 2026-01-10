@@ -1,0 +1,4 @@
+# Local secrets for Twitch Chat Helper
+app/config/channel.txt
+app/config/oauth_token.txt
+app/config/username.txt

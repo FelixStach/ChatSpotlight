@@ -1,0 +1,2 @@
+# Twitch OAuth token (include the leading oauth: prefix)
+oauth:your_token_here

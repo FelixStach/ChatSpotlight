@@ -1,0 +1,2 @@
+# Twitch channel name (no leading #)
+your_channel_name
