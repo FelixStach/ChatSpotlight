@@ -1243,6 +1243,7 @@
       pinnedId: null,
       pendingRumbles: new Map(), // id -> { expiresAt, delivered }
     };
+    const isMobile = (window.matchMedia?.('(pointer: coarse)').matches) || (navigator.maxTouchPoints > 0);
     let pendingMessage = null;
     let composerOpen = false;
     let pendingSpotlight = true;
@@ -1256,6 +1257,17 @@
       } else {
         sessionStorage.removeItem(SESSION_STORAGE_KEY);
       }
+    };
+
+    const focusAuthField = () => {
+      if (!authInput || isMobile) return;
+      const attemptFocus = () => {
+        authInput.focus({ preventScroll: true });
+        authInput.setSelectionRange?.(authInput.value.length, authInput.value.length);
+      };
+      attemptFocus();
+      requestAnimationFrame(attemptFocus);
+      setTimeout(attemptFocus, 120);
     };
 
     const withSession = (payload = {}) => {
@@ -1276,7 +1288,7 @@
       if (!authOverlay) return;
       authOverlay.setAttribute('data-open', 'true');
       if (authError) authError.textContent = '';
-      if (authInput) setTimeout(() => authInput.focus({ preventScroll: true }), 30);
+      focusAuthField();
     };
 
     const ensureAuth = (action) => {
