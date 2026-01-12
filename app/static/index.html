@@ -136,7 +136,7 @@
         background 140ms ease,
         border-color 140ms ease,
         transform 200ms ease,
-        opacity 240ms ease,
+        opacity 400ms ease, /* slower fade-out */
         max-height 260ms ease,
         padding 260ms ease,
         margin 260ms ease;
@@ -217,10 +217,10 @@
 
     .custom-textarea {
       width: 100%;
-      min-height: clamp(60px, 11vh, 100px);
+      min-height: clamp(80px, 15vh, 120px); /* taller input field */
       max-height: clamp(120px, 22vh, 180px);
       resize: none;
-      padding: 0.75rem 3.1rem 0.75rem 0.85rem;
+      padding: 0.75rem 5rem 0.75rem 0.85rem;
       border-radius: 0;
       border: 0;
       background: transparent;
@@ -243,13 +243,19 @@
       font-style: normal;
     }
 
-    .custom-submit {
+    .custom-actions {
       position: absolute;
       right: 0.75rem;
       bottom: 0.75rem;
-      width: 42px;
-      height: 42px;
-      border-radius: 12px;
+      display: inline-flex;
+      gap: 0.25rem;
+    }
+
+    .custom-submit,
+    .custom-paste {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
       border: 0;
       background: transparent;
       color: #b3f2d8;
@@ -260,7 +266,8 @@
       transition: transform 120ms ease, box-shadow 160ms ease;
     }
 
-    .custom-submit svg {
+    .custom-submit svg,
+    .custom-paste svg {
       width: 18px;
       height: 18px;
       display: block;
@@ -271,12 +278,14 @@
       stroke-linejoin: round;
     }
 
-    .custom-submit:hover {
+    .custom-submit:hover,
+    .custom-paste:hover {
       box-shadow: none;
       text-shadow: 0 0 16px rgba(88, 221, 161, 0.6);
     }
 
-    .custom-submit:active {
+    .custom-submit:active,
+    .custom-paste:active {
       transform: translateY(1px);
     }
 
@@ -588,6 +597,33 @@
       white-space: nowrap;
     }
 
+    .user-tag,
+    .queue-user {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .badge-icon svg {
+      width: 16px;
+      height: 16px;
+      display: block;
+      fill: #9146ff;
+      color: #9146ff;
+      opacity: 1;
+      stroke: none;
+    }
+
+    .queue-user .badge-icon svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .chat-message--custom .badge-icon,
+    .queue-item--custom .badge-icon {
+      display: none;
+    }
+
     .text {
       flex: 1;
       font-size: 1rem;
@@ -610,6 +646,20 @@
       gap: clamp(0.9rem, 1.3vw, 1.4rem);
       height: 100%;
       min-height: 0;
+    }
+
+    .queue-header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 0.75rem;
+    }
+
+    .queue-title {
+      font-size: clamp(1.05rem, 1.4vw, 1.3rem);
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: 0.02em;
     }
 
     .queue-item {
@@ -928,12 +978,15 @@
 <body>
   <main class="shell">
     <section class="panel queue-panel">
+      <div class="queue-header">
+        <h2 class="queue-title">Spotlight</h2>
+      </div>
       <ol id="spotlight-queue" class="queue-list" aria-live="polite" aria-label="Highlighted messages"></ol>
     </section>
 
     <section class="panel chat-panel">
       <div class="chat-header" aria-live="polite">
-        <h2 id="channel-name" class="chat-title">Loading channel…</h2>
+        <h2 id="channel-name" class="chat-title">Loading channel Chat…</h2>
       </div>
       <ul id="chat-stream" aria-live="polite" aria-label="Twitch chat messages"></ul>
       <form id="custom-message-form" class="custom-form" autocomplete="off">
@@ -962,15 +1015,23 @@
               id="custom-text"
               class="custom-textarea"
               name="text"
-              placeholder="Teile deine Nachricht"
+              placeholder="Schreibe eine Nachricht"
               maxlength="500"
               required
             ></textarea>
-            <button class="custom-submit" type="submit" aria-label="Nachricht senden">
-              <svg viewBox="0 0 18 18" aria-hidden="true" focusable="false">
-                <path d="M3 9h12M9 3l6 6-6 6" />
-              </svg>
-            </button>
+            <div class="custom-actions">
+              <button class="custom-paste" type="button" aria-label="Aus Zwischenablage einfügen">
+                <svg viewBox="0 0 18 18" aria-hidden="true" focusable="false">
+                  <path d="M6 3h6l1 2h-8l1-2z" />
+                  <path d="M5 5h8v10H5z" />
+                </svg>
+              </button>
+              <button class="custom-submit" type="submit" aria-label="Nachricht senden">
+                <svg viewBox="0 0 18 18" aria-hidden="true" focusable="false">
+                  <path d="M3 9h12M9 3l6 6-6 6" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       </form>
@@ -980,7 +1041,14 @@
   <template id="message-template">
     <li class="chat-message">
       <div class="chat-row">
-        <span class="badge"></span>
+        <div class="user-tag">
+          <span class="badge"></span>
+          <span class="badge-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M4 2h17v11.5l-4.5 4.5H12l-3.5 3.5V18H4V2Zm3.5 12H10V7H7.5v7Zm5 0h2.5V7h-2.5v7Z" />
+            </svg>
+          </span>
+        </div>
         <p class="text"></p>
       </div>
       <time class="timestamp"></time>
@@ -990,7 +1058,14 @@
   <template id="queue-template">
     <li class="queue-item">
       <div class="queue-meta">
-        <span class="queue-user"></span>
+        <div class="queue-user">
+          <span class="queue-user-text"></span>
+          <span class="badge-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M4 2h17v11.5l-4.5 4.5H12l-3.5 3.5V18H4V2Zm3.5 12H10V7H7.5v7Zm5 0h2.5V7h-2.5v7Z" />
+            </svg>
+          </span>
+        </div>
         <span class="queue-flag queue-flag--pinned" hidden>Pinned</span>
         <div class="queue-actions">
           <button class="queue-rumble" type="button" aria-label="Rumble message">~</button>
@@ -1167,7 +1242,8 @@
 
       const node = chatTemplate.content.firstElementChild.cloneNode(true);
       node.dataset.messageId = message.id;
-      node.querySelector('.badge').textContent = message.user;
+      const badgeEl = node.querySelector('.badge');
+      if (badgeEl) badgeEl.textContent = message.user;
       node.querySelector('.text').textContent = message.text;
       node.querySelector('.timestamp').textContent = formatClockTime(message.timestampMs);
       node.classList.toggle('chat-message--custom', message.custom === true);
@@ -1275,7 +1351,7 @@
     }
 
     function updateQueueNode(node, payload, message, { pinnedExists, isNewId = false }) {
-      const userEl = node.querySelector('.queue-user');
+      const userEl = node.querySelector('.queue-user-text') || node.querySelector('.queue-user');
       const textEl = node.querySelector('.queue-text');
       const pinBtn = node.querySelector('.queue-pin');
       const rumbleBtn = node.querySelector('.queue-rumble');
@@ -1472,13 +1548,14 @@
         const data = await resp.json();
         const name = (data?.channel ?? '').toString().trim();
         if (name) {
-          channelTitle.textContent = name.replace(/^#/, '');
+          const clean = name.replace(/^#/, '');
+          channelTitle.textContent = `${clean} Chat`;
           return;
         }
       } catch (err) {
         console.warn('Unable to load channel name', err);
       }
-      channelTitle.textContent = 'channel';
+      channelTitle.textContent = 'channel Chat';
     }
 
     if (customForm && customTextArea) {
@@ -1502,7 +1579,10 @@
         if (composeToggle) composeToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
         if (customForm) customForm.setAttribute('data-composer', open ? 'open' : 'closed');
         if (open && customTextArea) {
-          setTimeout(() => customTextArea.focus({ preventScroll: false }), 60);
+          const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+          if (!isMobile) {
+            setTimeout(() => customTextArea.focus({ preventScroll: false }), 60);
+          }
         }
       };
 
@@ -1651,6 +1731,23 @@
           if (evt.key === 'Enter' && evt.target !== customTextArea) {
             evt.preventDefault();
             sendPendingMessage();
+          }
+        });
+      }
+
+      const pasteButton = document.querySelector('.custom-paste');
+      if (pasteButton && customTextArea) {
+        pasteButton.addEventListener('click', async () => {
+          if (!navigator.clipboard?.readText) {
+            console.warn('Clipboard API not available in this context.');
+            return;
+          }
+          try {
+            const text = await navigator.clipboard.readText();
+            customTextArea.value = text;
+            customTextArea.focus({ preventScroll: false });
+          } catch (err) {
+            console.error('Failed to read clipboard:', err);
           }
         });
       }
