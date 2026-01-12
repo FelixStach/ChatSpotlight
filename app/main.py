@@ -16,6 +16,8 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 logging.basicConfig(level=logging.INFO, format="[%(asctime)s] %(levelname)s: %(message)s")
+
+# Core paths and files
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
 CONFIG_DIR = BASE_DIR / "config"
@@ -23,18 +25,26 @@ USERNAME_FILE = CONFIG_DIR / "username.txt"
 CHANNEL_FILE = CONFIG_DIR / "channel.txt"
 TOKEN_FILE = CONFIG_DIR / "oauth_token.txt"
 PASSWORD_FILE = CONFIG_DIR / "password.txt"
+
+# Twitch / chat settings
 IRC_HOST = "irc.chat.twitch.tv"
 IRC_PORT = 6697
 HISTORY_LIMIT = 100
 RETRY_DELAY_SECONDS = 5
-USE_FAKE_STREAM = False#os.getenv("FAKE_CHAT_MODE", "0").lower() in {"1", "true", "yes", "on"}
+USE_FAKE_STREAM = False
+FAKE_CHANNEL_NAME = "demo"
 TOTAL_QUEUE_SLOTS = 3
-CHANNEL_NAME: Optional[str] = None
-PATH_PREFIX = os.getenv("PATH_PREFIX", "").strip("/")
+
+# Routing and session settings
+PATH_PREFIX = ""
 PREFIX = f"/{PATH_PREFIX}" if PATH_PREFIX else ""
-SESSION_TTL_SECONDS = int(os.getenv("SESSION_TTL_SECONDS", "43200"))
+SESSION_TTL_SECONDS = 43200
 SESSION_HEADER = "X-Session-Token"
 SESSION_COOKIE = "chatspotlight_session"
+SECURE_COOKIES = False
+PROTECTED_EVENTS = {"highlight", "clearHighlight", "pin", "unpin", "rumble"}
+
+CHANNEL_NAME: Optional[str] = None
 
 app = FastAPI(title="Twitch Chat Helper", version="1.0.0")
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
@@ -334,8 +344,7 @@ async def handle_client_event(event: Any) -> None:
         return
 
     event_type = event.get("type")
-    protected = {"highlight", "clearHighlight", "pin", "unpin", "rumble"}
-    if event_type in protected and not _validate_session(event.get("session")):
+    if event_type in PROTECTED_EVENTS and not _validate_session(event.get("session")):
         return
     if event_type == "highlight":
         message_id = event.get("id")
@@ -507,7 +516,7 @@ async def startup_event() -> None:
     if USE_FAKE_STREAM:
         app.state.chat_task = asyncio.create_task(fake_chat_loop())
         mode = "fake"
-        CHANNEL_NAME = os.getenv("FAKE_CHANNEL", "demo").lstrip("#")
+        CHANNEL_NAME = FAKE_CHANNEL_NAME
     else:
         username = required_file(USERNAME_FILE, "Twitch username")
         token = required_file(TOKEN_FILE, "Twitch OAuth token")
@@ -555,7 +564,7 @@ async def create_session(response: Response, body: Dict[str, Any] = Body(...)) -
     token, expires_at = _issue_session()
     expires_dt = datetime.fromtimestamp(expires_at, tz=timezone.utc)
     max_age = int(timedelta(seconds=SESSION_TTL_SECONDS).total_seconds())
-    secure_cookie = os.getenv("ENABLE_SECURE_COOKIES", "0").lower() in {"1", "true", "yes", "on"}
+    secure_cookie = SECURE_COOKIES
     response.set_cookie(
         key=SESSION_COOKIE,
         value=token,
