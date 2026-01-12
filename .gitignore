@@ -8,3 +8,6 @@ app/config/password.txt
 .venv/
 __pycache__/
 *.py[cod]
+
+# Nohup output
+nohup.out
