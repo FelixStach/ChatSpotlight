@@ -349,6 +349,11 @@ async def handle_client_event(event: Any) -> None:
             return
         unpin_message(message_id)
         await broadcast_queue()
+    elif event_type == "rumble":
+        message_id = event.get("id")
+        if not isinstance(message_id, str):
+            return
+        await manager.broadcast({"type": "rumble", "id": message_id})
 
 
 async def twitch_chat_loop(username: str, token: str, channel: str) -> None:
@@ -499,10 +504,16 @@ async def custom_message(body: Dict[str, Any] = Body(...)) -> Dict[str, str]:
     user = raw_user[:48] if raw_user else "Guest"
     text = raw_text[:500]
 
+    spotlight_raw = body.get("spotlight", True)
+    spotlight = bool(spotlight_raw)
+
     payload = build_message_payload(user=user, text=text)
     payload["custom"] = True
 
     await broadcast_message(payload)
+    if spotlight:
+        push_highlight_queue(payload, move_to_front=True)
+        await broadcast_queue()
     return {"status": "ok", "id": payload["id"]}
 
 
