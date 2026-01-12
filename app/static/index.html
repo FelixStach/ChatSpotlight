@@ -667,7 +667,7 @@
     .chat-message--fresh {
       border-color: rgba(248, 212, 119, 0.7);
       background: rgba(248, 212, 119, 0.08);
-      animation: chat-pulse-ring 0.95s ease-out 0s 3;
+      animation: chat-pulse-ring 0.65s ease-out 0s 2;
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -960,7 +960,7 @@
     }
 
     .queue-text {
-      font-size: clamp(1.6rem, 1.5vw, 1.8rem); /* Increased minimum size while keeping max reasonable */
+      font-size: clamp(1.6rem, 1.5vw, 2.0rem); /* Increased minimum size while keeping max reasonable */
       line-height: 1.35;
       max-height: 100%;
       overflow: hidden;
@@ -970,8 +970,8 @@
     }
 
     .queue-text--compact {
-      font-size: clamp(1rem, 1.2vw, 1.4rem);
-      line-height: 1.3;
+      font-size: clamp(1.28rem, 1.2vw, 1.6rem); /* ~80% of the primary queue-text clamp */
+      line-height: 1.32;
     }
 
     .queue-item--rumble {
@@ -1082,6 +1082,14 @@
         grid-template-rows: minmax(0, 46vh) minmax(0, 54vh);
         height: 100svh;
         min-height: 100svh;
+      }
+
+      .queue-text {
+        font-size: clamp(1.15rem, 1.05vw, 1.4rem);
+      }
+
+      .queue-text--compact {
+        font-size: clamp(0.92rem, 0.9vw, 1.2rem);
       }
     }
 
@@ -1509,7 +1517,7 @@
       if (pulse) {
         clearFreshPulse();
         node.classList.add('chat-message--fresh');
-        setTimeout(() => node.classList.remove('chat-message--fresh'), 3200);
+        setTimeout(() => node.classList.remove('chat-message--fresh'), 1600);
       }
 
       trimChatMessages();
