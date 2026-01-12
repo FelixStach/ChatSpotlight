@@ -104,8 +104,14 @@
 
       font-weight: 700;
       cursor: pointer;
-      transition: background 140ms ease, border-color 140ms ease, transform 120ms ease;
+      transition:
+        background 140ms ease,
+        border-color 140ms ease,
+        transform 200ms ease,
+        opacity 240ms ease;
       text-align: center;
+      opacity: 1;
+      transform: translateY(0);
     }
 
     .compose-toggle:hover {
@@ -118,7 +124,22 @@
     }
 
     .custom-form[data-composer="open"] .compose-toggle {
-      display: none;
+      opacity: 0;
+      transform: translateY(-8px);
+      pointer-events: none;
+      max-height: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+      margin: 0;
+      overflow: hidden;
+      transition:
+        background 140ms ease,
+        border-color 140ms ease,
+        transform 200ms ease,
+        opacity 240ms ease,
+        max-height 260ms ease,
+        padding 260ms ease,
+        margin 260ms ease;
     }
 
     .input-stack {
@@ -132,9 +153,12 @@
       background: rgba(255, 255, 255, 0.04);
       max-height: 0;
       opacity: 0;
-      transform: translateY(-8px);
+      transform: translateY(-12px);
       pointer-events: none;
-      transition: max-height 220ms cubic-bezier(0.22, 1, 0.36, 1), opacity 180ms ease, transform 220ms ease;
+      transition:
+        max-height 420ms cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 380ms ease,
+        transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
       position: relative;
     }
 
@@ -143,6 +167,7 @@
       opacity: 1;
       transform: translateY(0);
       pointer-events: auto;
+      transition-delay: 40ms;
     }
 
     .role-toggle {
@@ -606,7 +631,8 @@
       cursor: pointer;
       position: relative;
       box-shadow: var(--q-shadow);
-      transition: border-color 240ms ease, background-color 280ms ease, box-shadow 280ms ease;
+      transition: border-color 240ms ease, background-color 280ms ease, box-shadow 280ms ease,
+        opacity 320ms ease, transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
       transform: translateY(var(--queue-offset-y)) translateX(var(--queue-rumble-x)) scale(var(--queue-scale));
     }
 
@@ -780,6 +806,13 @@
       animation: rumble 0.6s cubic-bezier(0.25, 0.8, 0.35, 1);
     }
 
+    .queue-item--entering {
+      opacity: 0;
+      --queue-offset-y: 22px;
+      --queue-scale: 0.95;
+      transition: opacity 720ms ease, transform 840ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
     @keyframes rumble {
       0% {
         --queue-rumble-x: 0px;
@@ -825,6 +858,9 @@
     @media (prefers-reduced-motion: reduce) {
       .queue-item--rumble {
         animation: none;
+      }
+      .queue-item--entering {
+        transition: none;
       }
     }
 
@@ -1188,7 +1224,7 @@
 
     function renderQueue(items) {
       if (!queueList || !queueTemplate) return;
-
+      const prevPositions = captureQueuePositions();
       const pinnedId = state.pinnedId;
       const pinnedExists = Boolean(pinnedId);
       const children = Array.from(queueList.children);
@@ -1198,6 +1234,7 @@
         children.push(node);
       }
 
+      const prevIds = new Set(children.map((c) => c.dataset.messageId).filter(Boolean));
       for (let slot = 0; slot < TOTAL_QUEUE_SLOTS; slot += 1) {
         const payload = items[slot];
         const existing = children[slot];
@@ -1205,7 +1242,8 @@
           const message = messageStore.get(payload.id) || upsertMessage(payload);
           const reuse = existing && existing.dataset.messageId === payload.id ? existing : null;
           const node = reuse || queueTemplate.content.firstElementChild.cloneNode(true);
-          updateQueueNode(node, payload, message, { pinnedExists });
+          const isNewId = !prevIds.has(payload.id);
+          updateQueueNode(node, payload, message, { pinnedExists, isNewId });
           if (node !== existing) {
             if (existing) {
               queueList.replaceChild(node, existing);
@@ -1232,10 +1270,11 @@
         queueList.removeChild(queueList.lastElementChild);
       }
 
+      animateQueueReflow(prevPositions);
       flushPendingRumbles();
     }
 
-    function updateQueueNode(node, payload, message, { pinnedExists }) {
+    function updateQueueNode(node, payload, message, { pinnedExists, isNewId = false }) {
       const userEl = node.querySelector('.queue-user');
       const textEl = node.querySelector('.queue-text');
       const pinBtn = node.querySelector('.queue-pin');
@@ -1287,6 +1326,15 @@
       node.classList.toggle('queue-item--highlighted', payload.highlighted === true);
       node.classList.toggle('queue-item--pinned', isPinned);
       node.classList.toggle('queue-item--custom', message?.custom === true || payload.custom === true);
+
+      if (isNewId) {
+        node.classList.add('queue-item--entering');
+        // Force reflow before removing the class to trigger transitions.
+        node.getBoundingClientRect();
+        requestAnimationFrame(() => {
+          node.classList.remove('queue-item--entering');
+        });
+      }
     }
 
     function resetQueueNode(node) {
@@ -1313,6 +1361,38 @@
 
       node.onclick = null;
       node.className = 'queue-item queue-item--empty';
+    }
+
+    function captureQueuePositions() {
+      const map = new Map();
+      if (!queueList) return map;
+      queueList.querySelectorAll('.queue-item[data-message-id]').forEach((el) => {
+        const id = el.dataset.messageId;
+        if (id) map.set(id, el.getBoundingClientRect().top);
+      });
+      return map;
+    }
+
+    function animateQueueReflow(prevPositions) {
+      if (!queueList || !prevPositions || prevPositions.size === 0) return;
+      const items = queueList.querySelectorAll('.queue-item[data-message-id]');
+      items.forEach((el) => {
+        const id = el.dataset.messageId;
+        if (!id || !prevPositions.has(id)) return;
+        const prevTop = prevPositions.get(id);
+        const newTop = el.getBoundingClientRect().top;
+        const deltaY = prevTop - newTop;
+        if (!Number.isFinite(deltaY) || Math.abs(deltaY) < 1) return;
+
+        // Apply inverse transform, then let CSS transition bring it to place.
+        el.style.transition = 'none';
+        el.style.setProperty('--queue-offset-y', `${deltaY}px`);
+        el.getBoundingClientRect();
+        requestAnimationFrame(() => {
+          el.style.transition = '';
+          el.style.setProperty('--queue-offset-y', '0px');
+        });
+      });
     }
 
     function handleRumblePayload(messageId) {
