@@ -960,7 +960,7 @@
     }
 
     .queue-text {
-      font-size: clamp(1.35rem, 1.9vw, 2.2rem);
+      font-size: clamp(1.6rem, 1.5vw, 1.8rem); /* Increased minimum size while keeping max reasonable */
       line-height: 1.35;
       max-height: 100%;
       overflow: hidden;
@@ -1067,7 +1067,7 @@
       }
     }
 
-    @media (max-width: 900px) and (orientation: portrait) {
+    @media (max-aspect-ratio: 3/5) {
       body {
         height: 100svh;
         min-height: 100svh;
@@ -1079,7 +1079,7 @@
         grid-template-areas:
           'queue'
           'chat';
-        grid-template-rows: minmax(0, 45vh) minmax(0, 55vh);
+        grid-template-rows: minmax(0, 46vh) minmax(0, 54vh);
         height: 100svh;
         min-height: 100svh;
       }
