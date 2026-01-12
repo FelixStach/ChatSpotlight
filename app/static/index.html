@@ -266,7 +266,6 @@
       user-select: none;
       touch-action: none;
       z-index: 1;
-      margin: 0.4rem 0;
     }
 
     .custom-resize::after {
@@ -592,18 +591,22 @@
       --queue-offset-y: 0px;
       --queue-rumble-x: 0px;
       --queue-scale: 1;
+      --q-border: rgba(255, 255, 255, 0.08);
+      --q-bg: rgba(255, 255, 255, 0.04);
+      --q-shadow: none;
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
       border-radius: 28px;
-      border: 1px solid rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--q-border);
       padding: clamp(1.25rem, 1.4vw, 1.75rem);
-      background: rgba(255, 255, 255, 0.02);
+      background-color: var(--q-bg);
       min-height: 0;
       height: 100%;
       cursor: pointer;
       position: relative;
-      transition: box-shadow 180ms ease, transform 180ms ease;
+      box-shadow: var(--q-shadow);
+      transition: border-color 240ms ease, background-color 280ms ease, box-shadow 280ms ease;
       transform: translateY(var(--queue-offset-y)) translateX(var(--queue-rumble-x)) scale(var(--queue-scale));
     }
 
@@ -620,38 +623,38 @@
     }
 
     .queue-item--highlighted {
-      border-color: rgba(248, 212, 119, 0.75);
-      box-shadow: 0 16px 36px rgba(248, 212, 119, 0.35);
-      background: linear-gradient(135deg, rgba(248, 212, 119, 0.32), rgba(35, 45, 90, 0.95));
+      --q-border: rgba(248, 212, 119, 0.85);
+      --q-shadow: 0 16px 36px rgba(248, 212, 119, 0.35);
+      --q-bg: rgba(248, 212, 119, 0.22);
     }
 
     .queue-item--custom {
-      border-color: rgba(88, 221, 161, 0.45);
-      background: linear-gradient(135deg, rgba(88, 221, 161, 0.18), rgba(18, 39, 32, 0.8));
+      --q-border: rgba(88, 221, 161, 0.6);
+      --q-bg: rgba(88, 221, 161, 0.18);
     }
 
     .queue-item--custom.queue-item--highlighted {
-      border-color: rgba(131, 243, 196, 0.9);
-      box-shadow: 0 18px 44px rgba(131, 243, 196, 0.45);
-      background: linear-gradient(135deg, rgba(131, 243, 196, 0.35), rgba(18, 39, 32, 0.92));
+      --q-border: rgba(131, 243, 196, 0.95);
+      --q-shadow: 0 18px 44px rgba(131, 243, 196, 0.45);
+      --q-bg: rgba(131, 243, 196, 0.26);
     }
 
     .queue-item--custom.queue-item--pinned {
-      border-color: rgba(255, 158, 94, 0.9);
-      box-shadow: 0 20px 48px rgba(255, 158, 94, 0.48);
-      background: linear-gradient(135deg, rgba(255, 158, 94, 0.32), rgba(60, 32, 20, 0.9));
+      --q-border: rgba(255, 158, 94, 0.95);
+      --q-shadow: 0 20px 48px rgba(255, 158, 94, 0.48);
+      --q-bg: rgba(255, 158, 94, 0.24);
     }
 
     .queue-item--pinned {
-      border-color: rgba(255, 105, 97, 0.9);
-      box-shadow: 0 20px 48px rgba(255, 105, 97, 0.5);
-      background: linear-gradient(135deg, rgba(255, 105, 97, 0.26), rgba(40, 30, 38, 0.98));
+      --q-border: rgba(255, 105, 97, 0.95);
+      --q-shadow: 0 20px 48px rgba(255, 105, 97, 0.5);
+      --q-bg: rgba(255, 105, 97, 0.22);
     }
 
     .queue-item--custom.queue-item--pinned {
-      border-color: rgba(255, 165, 111, 0.95);
-      box-shadow: 0 22px 52px rgba(255, 165, 111, 0.55);
-      background: linear-gradient(135deg, rgba(255, 187, 133, 0.4), rgba(52, 32, 22, 0.96));
+      --q-border: rgba(255, 165, 111, 0.95);
+      --q-shadow: 0 22px 52px rgba(255, 165, 111, 0.55);
+      --q-bg: rgba(255, 187, 133, 0.32);
     }
 
     .queue-meta {
@@ -773,66 +776,55 @@
       line-height: 1.3;
     }
 
-    .queue-item--enter {
-      animation: queueEnter 360ms ease forwards;
-    }
-
     .queue-item--rumble {
-      animation: rumble 0.38s ease-in-out;
+      animation: rumble 0.6s cubic-bezier(0.25, 0.8, 0.35, 1);
     }
 
     @keyframes rumble {
-      0%,
-      100% {
+      0% {
         --queue-rumble-x: 0px;
       }
-      20% {
-        --queue-rumble-x: -4px;
+      8% {
+        --queue-rumble-x: -3px;
+      }
+      16% {
+        --queue-rumble-x: 8px;
+      }
+      24% {
+        --queue-rumble-x: -10px;
+      }
+      32% {
+        --queue-rumble-x: 10px;
       }
       40% {
+        --queue-rumble-x: -8px;
+      }
+      48% {
+        --queue-rumble-x: 7px;
+      }
+      56% {
+        --queue-rumble-x: -5px;
+      }
+      64% {
         --queue-rumble-x: 4px;
       }
-      60% {
+      72% {
         --queue-rumble-x: -3px;
       }
       80% {
-        --queue-rumble-x: 3px;
+        --queue-rumble-x: 2px;
+      }
+      88% {
+        --queue-rumble-x: -1px;
+      }
+      100% {
+        --queue-rumble-x: 0px;
       }
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .queue-item--rumble,
-      .queue-item--enter,
-      .queue-item--shift {
+      .queue-item--rumble {
         animation: none;
-      }
-    }
-
-    .queue-item--shift {
-      animation: queueShift 360ms ease;
-    }
-
-    @keyframes queueEnter {
-      from {
-        opacity: 0;
-        --queue-offset-y: 30px;
-        --queue-scale: 0.95;
-      }
-      to {
-        opacity: 1;
-        --queue-offset-y: 0px;
-        --queue-scale: 1;
-      }
-    }
-
-    @keyframes queueShift {
-      from {
-        opacity: 0.8;
-        --queue-offset-y: 8px;
-      }
-      to {
-        opacity: 1;
-        --queue-offset-y: 0px;
       }
     }
 
@@ -1029,7 +1021,7 @@
       highlightedIds: new Set(),
       previousQueueIds: [],
       pinnedId: null,
-      pendingRumbles: new Map(), // id -> expiresAt
+      pendingRumbles: new Map(), // id -> { expiresAt, delivered }
     };
     let pendingMessage = null;
     let composerOpen = false;
@@ -1197,93 +1189,130 @@
     function renderQueue(items) {
       if (!queueList || !queueTemplate) return;
 
-      const prevPositions = captureQueuePositions();
       const pinnedId = state.pinnedId;
       const pinnedExists = Boolean(pinnedId);
-
-      queueList.innerHTML = '';
-      const fragment = document.createDocumentFragment();
-      const newestId = items.find((item) => item && !state.previousQueueIds.includes(item.id))?.id;
+      const children = Array.from(queueList.children);
+      while (children.length < TOTAL_QUEUE_SLOTS) {
+        const node = queueTemplate.content.firstElementChild.cloneNode(true);
+        queueList.appendChild(node);
+        children.push(node);
+      }
 
       for (let slot = 0; slot < TOTAL_QUEUE_SLOTS; slot += 1) {
         const payload = items[slot];
-        const node = queueTemplate.content.firstElementChild.cloneNode(true);
-        const userEl = node.querySelector('.queue-user');
-        const textEl = node.querySelector('.queue-text');
-        const pinBtn = node.querySelector('.queue-pin');
-        const rumbleBtn = node.querySelector('.queue-rumble');
-        const pinnedFlag = node.querySelector('.queue-flag--pinned');
+        const existing = children[slot];
         if (payload) {
           const message = messageStore.get(payload.id) || upsertMessage(payload);
-          node.dataset.messageId = payload.id;
-          userEl.textContent = message?.user ?? payload.user ?? '';
-          const queueText = message?.text ?? payload.text ?? '';
-          textEl.textContent = queueText;
-
-          const isCompact = queueText.length > LONG_QUEUE_TEXT_THRESHOLD;
-          textEl.classList.toggle('queue-text--compact', isCompact);
-
-          const isPinned = payload.pinned === true;
-          const disablePin = pinnedExists && !isPinned;
-
-          if (pinBtn) {
-            pinBtn.textContent = isPinned ? 'Unpin' : 'Pin';
-            pinBtn.classList.toggle('queue-pin--active', isPinned);
-            pinBtn.disabled = disablePin;
-            pinBtn.title = isPinned
-              ? 'Unpin this message'
-              : disablePin
-              ? 'Another message is pinned'
-              : 'Pin this message';
-            pinBtn.addEventListener('click', (evt) => {
-              evt.stopPropagation();
-              requestPinToggle(payload.id, isPinned);
-            });
+          const reuse = existing && existing.dataset.messageId === payload.id ? existing : null;
+          const node = reuse || queueTemplate.content.firstElementChild.cloneNode(true);
+          updateQueueNode(node, payload, message, { pinnedExists });
+          if (node !== existing) {
+            if (existing) {
+              queueList.replaceChild(node, existing);
+            } else {
+              queueList.insertBefore(node, children[slot] || null);
+            }
           }
-
-          if (rumbleBtn) {
-            rumbleBtn.title = 'Rumble (alert)';
-            rumbleBtn.addEventListener('click', (evt) => {
-              evt.stopPropagation();
-              triggerRumble(payload.id, { broadcast: true });
-            });
-          }
-
-          if (pinnedFlag) {
-            pinnedFlag.hidden = !isPinned;
-          }
-
-          if (payload.id === newestId) {
-            node.classList.add('queue-item--enter');
-          } else if (state.previousQueueIds.length) {
-            node.classList.add('queue-item--shift');
-          }
-
-          node.addEventListener('click', () => requestHighlight(payload.id));
-          node.classList.toggle('queue-item--highlighted', payload.highlighted === true);
-          node.classList.toggle('queue-item--pinned', isPinned);
-          node.classList.toggle('queue-item--custom', message?.custom === true || payload.custom === true);
         } else {
-          node.classList.add('queue-item--empty');
-          userEl.textContent = '';
-          textEl.textContent = '';
-          if (pinBtn) {
-            pinBtn.disabled = true;
-            pinBtn.hidden = true;
+          const reuseEmpty = existing && !existing.dataset.messageId;
+          const node = reuseEmpty ? existing : queueTemplate.content.firstElementChild.cloneNode(true);
+          resetQueueNode(node);
+          if (node !== existing) {
+            if (existing) {
+              queueList.replaceChild(node, existing);
+            } else {
+              queueList.insertBefore(node, children[slot] || null);
+            }
           }
-          if (rumbleBtn) {
-            rumbleBtn.disabled = true;
-            rumbleBtn.hidden = true;
-          }
-          if (pinnedFlag) pinnedFlag.hidden = true;
         }
-
-        fragment.appendChild(node);
       }
 
-      queueList.appendChild(fragment);
-      applyQueueFlip(prevPositions);
+      // Remove any extra nodes beyond the desired slot count.
+      while (queueList.children.length > TOTAL_QUEUE_SLOTS) {
+        queueList.removeChild(queueList.lastElementChild);
+      }
+
       flushPendingRumbles();
+    }
+
+    function updateQueueNode(node, payload, message, { pinnedExists }) {
+      const userEl = node.querySelector('.queue-user');
+      const textEl = node.querySelector('.queue-text');
+      const pinBtn = node.querySelector('.queue-pin');
+      const rumbleBtn = node.querySelector('.queue-rumble');
+      const pinnedFlag = node.querySelector('.queue-flag--pinned');
+
+      node.dataset.messageId = payload.id;
+      if (userEl) userEl.textContent = message?.user ?? payload.user ?? '';
+      const queueText = message?.text ?? payload.text ?? '';
+      if (textEl) {
+        textEl.textContent = queueText;
+        const isCompact = queueText.length > LONG_QUEUE_TEXT_THRESHOLD;
+        textEl.classList.toggle('queue-text--compact', isCompact);
+      }
+
+      const isPinned = payload.pinned === true;
+      const disablePin = pinnedExists && !isPinned;
+
+      if (pinBtn) {
+        pinBtn.textContent = isPinned ? 'Unpin' : 'Pin';
+        pinBtn.classList.toggle('queue-pin--active', isPinned);
+        pinBtn.disabled = disablePin;
+        pinBtn.hidden = false;
+        pinBtn.title = isPinned
+          ? 'Unpin this message'
+          : disablePin
+          ? 'Another message is pinned'
+          : 'Pin this message';
+        pinBtn.onclick = (evt) => {
+          evt.stopPropagation();
+          requestPinToggle(payload.id, isPinned);
+        };
+      }
+
+      if (rumbleBtn) {
+        rumbleBtn.disabled = false;
+        rumbleBtn.hidden = false;
+        rumbleBtn.title = 'Rumble (alert)';
+        rumbleBtn.onclick = (evt) => {
+          evt.stopPropagation();
+          triggerRumble(payload.id, { broadcast: true });
+        };
+      }
+
+      if (pinnedFlag) pinnedFlag.hidden = !isPinned;
+
+      node.onclick = () => requestHighlight(payload.id);
+      node.classList.remove('queue-item--empty');
+      node.classList.toggle('queue-item--highlighted', payload.highlighted === true);
+      node.classList.toggle('queue-item--pinned', isPinned);
+      node.classList.toggle('queue-item--custom', message?.custom === true || payload.custom === true);
+    }
+
+    function resetQueueNode(node) {
+      const userEl = node.querySelector('.queue-user');
+      const textEl = node.querySelector('.queue-text');
+      const pinBtn = node.querySelector('.queue-pin');
+      const rumbleBtn = node.querySelector('.queue-rumble');
+      const pinnedFlag = node.querySelector('.queue-flag--pinned');
+
+      node.dataset.messageId = '';
+      if (userEl) userEl.textContent = '';
+      if (textEl) textEl.textContent = '';
+      if (pinBtn) {
+        pinBtn.disabled = true;
+        pinBtn.hidden = true;
+        pinBtn.onclick = null;
+      }
+      if (rumbleBtn) {
+        rumbleBtn.disabled = true;
+        rumbleBtn.hidden = true;
+        rumbleBtn.onclick = null;
+      }
+      if (pinnedFlag) pinnedFlag.hidden = true;
+
+      node.onclick = null;
+      node.className = 'queue-item queue-item--empty';
     }
 
     function handleRumblePayload(messageId) {
@@ -1302,20 +1331,26 @@
     function enqueueRumble(messageId) {
       const now = Date.now();
       const expiresAt = now + RUMBLE_TTL_MS;
-      const currentExpiry = state.pendingRumbles.get(messageId) ?? 0;
-      // Keep the furthest-out expiry so repeated requests extend lifespan.
-      state.pendingRumbles.set(messageId, Math.max(expiresAt, currentExpiry));
+      const existing = state.pendingRumbles.get(messageId);
+      // Do not reset delivery flag unless this is a fresh intent.
+      const delivered = existing?.delivered === true ? false : false;
+      state.pendingRumbles.set(messageId, { expiresAt, delivered });
       flushPendingRumbles();
     }
 
     function flushPendingRumbles() {
       if (!queueList || !state.pendingRumbles.size) return;
       const now = Date.now();
-      state.pendingRumbles.forEach((expiresAt, id) => {
+      state.pendingRumbles.forEach((entry, id) => {
+        const expiresAt = entry?.expiresAt ?? 0;
+        if (now >= expiresAt) {
+          state.pendingRumbles.delete(id);
+          return;
+        }
+        if (entry?.delivered) return;
         const applied = applyRumbleToElement(id);
-        // Drop the intent only after it expires and we've successfully applied it to a live element,
-        // or if it never appears before the TTL.
-        if ((applied && now >= expiresAt) || (!applied && now >= expiresAt)) {
+        if (applied) {
+          // One-and-done: remove so it won't retrigger on future flushes unless re-enqueued.
           state.pendingRumbles.delete(id);
         }
       });
@@ -1329,49 +1364,6 @@
       void el.offsetWidth; // restart animation reliably
       el.classList.add('queue-item--rumble');
       return true;
-    }
-
-    function captureQueuePositions() {
-      const map = new Map();
-      if (!queueList) return map;
-      queueList.querySelectorAll('.queue-item[data-message-id]').forEach((el) => {
-        const id = el.dataset.messageId;
-        if (id) map.set(id, el.getBoundingClientRect().top);
-      });
-      return map;
-    }
-
-    function applyQueueFlip(prevPositions) {
-      if (!queueList || !prevPositions || prevPositions.size === 0) return;
-      const items = queueList.querySelectorAll('.queue-item[data-message-id]');
-      items.forEach((el) => {
-        const id = el.dataset.messageId;
-        if (!id || !prevPositions.has(id)) return;
-        const prevTop = prevPositions.get(id);
-        const newTop = el.getBoundingClientRect().top;
-        const deltaY = prevTop - newTop;
-        if (!Number.isFinite(deltaY) || Math.abs(deltaY) < 1) return;
-
-        el.style.transition = 'none';
-        el.style.setProperty('--queue-offset-y', `${deltaY}px`);
-        el.style.willChange = 'transform';
-
-        requestAnimationFrame(() => {
-          // Second frame ensures the initial transform is committed before animating.
-          requestAnimationFrame(() => {
-            const cleanup = () => {
-              el.style.transition = '';
-              el.style.removeProperty('--queue-offset-y');
-              el.style.willChange = '';
-              el.removeEventListener('transitionend', cleanup);
-            };
-
-            el.addEventListener('transitionend', cleanup);
-            el.style.transition = 'transform 320ms cubic-bezier(0.22, 1, 0.36, 1)';
-            el.style.setProperty('--queue-offset-y', '0px');
-          });
-        });
-      });
     }
 
     function formatClockTime(ms) {
