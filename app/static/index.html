@@ -589,6 +589,9 @@
     }
 
     .queue-item {
+      --queue-offset-y: 0px;
+      --queue-rumble-x: 0px;
+      --queue-scale: 1;
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
@@ -601,6 +604,7 @@
       cursor: pointer;
       position: relative;
       transition: box-shadow 180ms ease, transform 180ms ease;
+      transform: translateY(var(--queue-offset-y)) translateX(var(--queue-rumble-x)) scale(var(--queue-scale));
     }
 
     .queue-item--empty {
@@ -780,24 +784,26 @@
     @keyframes rumble {
       0%,
       100% {
-        transform: translateX(0);
+        --queue-rumble-x: 0px;
       }
       20% {
-        transform: translateX(-4px);
+        --queue-rumble-x: -4px;
       }
       40% {
-        transform: translateX(4px);
+        --queue-rumble-x: 4px;
       }
       60% {
-        transform: translateX(-3px);
+        --queue-rumble-x: -3px;
       }
       80% {
-        transform: translateX(3px);
+        --queue-rumble-x: 3px;
       }
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .queue-item--rumble {
+      .queue-item--rumble,
+      .queue-item--enter,
+      .queue-item--shift {
         animation: none;
       }
     }
@@ -809,22 +815,24 @@
     @keyframes queueEnter {
       from {
         opacity: 0;
-        transform: translateY(30px) scale(0.95);
+        --queue-offset-y: 30px;
+        --queue-scale: 0.95;
       }
       to {
         opacity: 1;
-        transform: translateY(0) scale(1);
+        --queue-offset-y: 0px;
+        --queue-scale: 1;
       }
     }
 
     @keyframes queueShift {
       from {
         opacity: 0.8;
-        transform: translateY(8px);
+        --queue-offset-y: 8px;
       }
       to {
         opacity: 1;
-        transform: translateY(0);
+        --queue-offset-y: 0px;
       }
     }
 
@@ -1013,6 +1021,7 @@
     const TOTAL_QUEUE_SLOTS = 3;
     const MAX_CHAT_MESSAGES = 100;
     const LONG_QUEUE_TEXT_THRESHOLD = 140;
+    const RUMBLE_TTL_MS = 1800; // keep rumble intents alive across queue re-renders
 
     const messageStore = new Map();
     const state = {
@@ -1020,6 +1029,7 @@
       highlightedIds: new Set(),
       previousQueueIds: [],
       pinnedId: null,
+      pendingRumbles: new Map(), // id -> expiresAt
     };
     let pendingMessage = null;
     let composerOpen = false;
@@ -1042,7 +1052,7 @@
       }
 
       if (payload.type === 'rumble') {
-        triggerRumble(payload.id);
+        handleRumblePayload(payload.id);
         return;
       }
 
@@ -1068,6 +1078,12 @@
         const atBottom = chatStream.scrollHeight - chatStream.scrollTop - chatStream.clientHeight < threshold;
         state.autoScroll = atBottom;
       });
+    }
+
+    // Re-apply pending rumbles whenever the queue DOM mutates (e.g., re-rendered slots).
+    if (queueList) {
+      const queueObserver = new MutationObserver(() => flushPendingRumbles());
+      queueObserver.observe(queueList, { childList: true });
     }
 
     function safeParse(raw) {
@@ -1255,6 +1271,10 @@
             pinBtn.disabled = true;
             pinBtn.hidden = true;
           }
+          if (rumbleBtn) {
+            rumbleBtn.disabled = true;
+            rumbleBtn.hidden = true;
+          }
           if (pinnedFlag) pinnedFlag.hidden = true;
         }
 
@@ -1263,19 +1283,52 @@
 
       queueList.appendChild(fragment);
       applyQueueFlip(prevPositions);
+      flushPendingRumbles();
+    }
+
+    function handleRumblePayload(messageId) {
+      if (!messageId) return;
+      enqueueRumble(messageId);
     }
 
     function triggerRumble(messageId, { broadcast = false } = {}) {
       if (!messageId) return;
-      const el = queueList?.querySelector(`.queue-item[data-message-id="${messageId}"]`);
-      if (el) {
-        el.classList.remove('queue-item--rumble');
-        void el.offsetWidth; // restart animation
-        el.classList.add('queue-item--rumble');
-      }
+      enqueueRumble(messageId);
       if (broadcast && socket && socket.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify({ type: 'rumble', id: messageId }));
       }
+    }
+
+    function enqueueRumble(messageId) {
+      const now = Date.now();
+      const expiresAt = now + RUMBLE_TTL_MS;
+      const currentExpiry = state.pendingRumbles.get(messageId) ?? 0;
+      // Keep the furthest-out expiry so repeated requests extend lifespan.
+      state.pendingRumbles.set(messageId, Math.max(expiresAt, currentExpiry));
+      flushPendingRumbles();
+    }
+
+    function flushPendingRumbles() {
+      if (!queueList || !state.pendingRumbles.size) return;
+      const now = Date.now();
+      state.pendingRumbles.forEach((expiresAt, id) => {
+        const applied = applyRumbleToElement(id);
+        // Drop the intent only after it expires and we've successfully applied it to a live element,
+        // or if it never appears before the TTL.
+        if ((applied && now >= expiresAt) || (!applied && now >= expiresAt)) {
+          state.pendingRumbles.delete(id);
+        }
+      });
+    }
+
+    function applyRumbleToElement(messageId) {
+      if (!queueList) return false;
+      const el = queueList.querySelector(`.queue-item[data-message-id="${messageId}"]`);
+      if (!el) return false;
+      el.classList.remove('queue-item--rumble');
+      void el.offsetWidth; // restart animation reliably
+      el.classList.add('queue-item--rumble');
+      return true;
     }
 
     function captureQueuePositions() {
@@ -1300,7 +1353,7 @@
         if (!Number.isFinite(deltaY) || Math.abs(deltaY) < 1) return;
 
         el.style.transition = 'none';
-        el.style.transform = `translateY(${deltaY}px)`;
+        el.style.setProperty('--queue-offset-y', `${deltaY}px`);
         el.style.willChange = 'transform';
 
         requestAnimationFrame(() => {
@@ -1308,14 +1361,14 @@
           requestAnimationFrame(() => {
             const cleanup = () => {
               el.style.transition = '';
-              el.style.transform = '';
+              el.style.removeProperty('--queue-offset-y');
               el.style.willChange = '';
               el.removeEventListener('transitionend', cleanup);
             };
 
             el.addEventListener('transitionend', cleanup);
             el.style.transition = 'transform 320ms cubic-bezier(0.22, 1, 0.36, 1)';
-            el.style.transform = 'translateY(0)';
+            el.style.setProperty('--queue-offset-y', '0px');
           });
         });
       });
