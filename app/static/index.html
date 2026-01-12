@@ -637,6 +637,45 @@
       transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
     }
 
+    @keyframes chat-pulse-ring {
+      0% {
+        box-shadow:
+          0 0 0 0 rgba(248, 212, 119, 0.8),
+          0 0 0 2px rgba(248, 212, 119, 0.5),
+          0 18px 34px rgba(0, 0, 0, 0.32);
+      }
+      45% {
+        box-shadow:
+          0 0 0 14px rgba(248, 212, 119, 0),
+          0 0 0 2px rgba(248, 212, 119, 0.34),
+          0 18px 34px rgba(0, 0, 0, 0.32);
+      }
+      75% {
+        box-shadow:
+          0 0 0 20px rgba(248, 212, 119, 0),
+          0 0 0 1px rgba(248, 212, 119, 0.16),
+          0 14px 28px rgba(0, 0, 0, 0.22);
+      }
+      100% {
+        box-shadow:
+          0 0 0 0 rgba(248, 212, 119, 0),
+          0 0 0 0 rgba(248, 212, 119, 0),
+          0 12px 20px rgba(0, 0, 0, 0.16);
+      }
+    }
+
+    .chat-message--fresh {
+      border-color: rgba(248, 212, 119, 0.7);
+      background: rgba(248, 212, 119, 0.08);
+      animation: chat-pulse-ring 0.95s ease-out 0s 3;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .chat-message--fresh {
+        animation: none;
+      }
+    }
+
     .chat-message:hover {
       transform: translateY(-2px);
       border-color: var(--accent-soft);
@@ -1306,7 +1345,7 @@
       if (!payload || !payload.type) return;
 
       if (payload.type === 'history' && Array.isArray(payload.messages)) {
-        payload.messages.forEach((msg) => addChatMessage(msg, { allowDuplicate: false }));
+        payload.messages.forEach((msg) => addChatMessage(msg, { allowDuplicate: false, pulse: false }));
         return;
       }
 
@@ -1441,7 +1480,14 @@
       return normalized;
     }
 
-    function addChatMessage(raw, { allowDuplicate = true } = {}) {
+    function clearFreshPulse() {
+      if (!chatStream) return;
+      chatStream.querySelectorAll('.chat-message--fresh').forEach((el) => {
+        el.classList.remove('chat-message--fresh');
+      });
+    }
+
+    function addChatMessage(raw, { allowDuplicate = true, pulse = true } = {}) {
       const message = upsertMessage(raw);
       if (!message || !chatTemplate || !chatStream) return;
 
@@ -1459,6 +1505,13 @@
       node.addEventListener('click', () => requestHighlight(message.id, { source: 'chat' }));
 
       chatStream.appendChild(node);
+
+      if (pulse) {
+        clearFreshPulse();
+        node.classList.add('chat-message--fresh');
+        setTimeout(() => node.classList.remove('chat-message--fresh'), 3200);
+      }
+
       trimChatMessages();
 
       if (state.autoScroll) {
