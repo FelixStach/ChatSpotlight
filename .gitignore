@@ -2,6 +2,7 @@
 app/config/channel.txt
 app/config/oauth_token.txt
 app/config/username.txt
+app/config/password.txt
 
 # Local development artifacts
 .venv/

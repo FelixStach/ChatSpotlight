@@ -1,15 +1,17 @@
 import asyncio
+import hmac
 import json
 import logging
 import os
+import secrets
 import ssl
 import uuid
 from collections import deque
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Deque, Dict, List, Optional, Set, Tuple
 
-from fastapi import Body, FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import Body, FastAPI, HTTPException, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -20,6 +22,7 @@ CONFIG_DIR = BASE_DIR / "config"
 USERNAME_FILE = CONFIG_DIR / "username.txt"
 CHANNEL_FILE = CONFIG_DIR / "channel.txt"
 TOKEN_FILE = CONFIG_DIR / "oauth_token.txt"
+PASSWORD_FILE = CONFIG_DIR / "password.txt"
 IRC_HOST = "irc.chat.twitch.tv"
 IRC_PORT = 6697
 HISTORY_LIMIT = 100
@@ -29,6 +32,9 @@ TOTAL_QUEUE_SLOTS = 3
 CHANNEL_NAME: Optional[str] = None
 PATH_PREFIX = os.getenv("PATH_PREFIX", "").strip("/")
 PREFIX = f"/{PATH_PREFIX}" if PATH_PREFIX else ""
+SESSION_TTL_SECONDS = int(os.getenv("SESSION_TTL_SECONDS", "43200"))
+SESSION_HEADER = "X-Session-Token"
+SESSION_COOKIE = "chatspotlight_session"
 
 app = FastAPI(title="Twitch Chat Helper", version="1.0.0")
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
@@ -39,6 +45,8 @@ if PREFIX:
 recent_messages: Deque[Dict[str, Any]] = deque(maxlen=HISTORY_LIMIT)
 message_lookup: Dict[str, Dict[str, Any]] = {}
 highlight_queue: List[Dict[str, Any]] = []
+active_sessions: Dict[str, float] = {}
+ADMIN_PASSWORD: Optional[str] = None
 
 
 def required_file(path: Path, label: str) -> str:
@@ -63,6 +71,49 @@ def required_file(path: Path, label: str) -> str:
         raise RuntimeError(message)
 
     return content
+
+
+def load_admin_password() -> str:
+    global ADMIN_PASSWORD
+    if ADMIN_PASSWORD:
+        return ADMIN_PASSWORD
+    ADMIN_PASSWORD = required_file(PASSWORD_FILE, "moderator password")
+    return ADMIN_PASSWORD
+
+
+def _now_ts() -> float:
+    return datetime.now(timezone.utc).timestamp()
+
+
+def _prune_sessions() -> None:
+    now = _now_ts()
+    expired = [token for token, exp in active_sessions.items() if exp <= now]
+    for token in expired:
+        active_sessions.pop(token, None)
+
+
+def _issue_session() -> Tuple[str, float]:
+    token = secrets.token_urlsafe(32)
+    expires_at = _now_ts() + SESSION_TTL_SECONDS
+    active_sessions[token] = expires_at
+    return token, expires_at
+
+
+def _validate_session(token: Optional[str]) -> bool:
+    if not token or not isinstance(token, str):
+        return False
+    _prune_sessions()
+    expires_at = active_sessions.get(token)
+    if expires_at is None or expires_at <= _now_ts():
+        active_sessions.pop(token, None)
+        return False
+    return True
+
+
+def _extract_session_token(request: Request) -> Optional[str]:
+    header_token = request.headers.get(SESSION_HEADER)
+    cookie_token = request.cookies.get(SESSION_COOKIE)
+    return header_token or cookie_token
 
 
 class ConnectionManager:
@@ -283,6 +334,9 @@ async def handle_client_event(event: Any) -> None:
         return
 
     event_type = event.get("type")
+    protected = {"highlight", "clearHighlight", "pin", "unpin", "rumble"}
+    if event_type in protected and not _validate_session(event.get("session")):
+        return
     if event_type == "highlight":
         message_id = event.get("id")
         if not isinstance(message_id, str):
@@ -449,6 +503,7 @@ async def fake_chat_loop() -> None:
 @app.on_event("startup")
 async def startup_event() -> None:
     global CHANNEL_NAME
+    load_admin_password()
     if USE_FAKE_STREAM:
         app.state.chat_task = asyncio.create_task(fake_chat_loop())
         mode = "fake"
@@ -490,8 +545,34 @@ async def channel_info() -> Dict[str, str]:
     return {"channel": clean}
 
 
+@app.post("/api/session")
+async def create_session(response: Response, body: Dict[str, Any] = Body(...)) -> Dict[str, Any]:
+    password = str(body.get("password") or "") if isinstance(body, dict) else ""
+    expected = load_admin_password()
+    if not hmac.compare_digest(password, expected):
+        raise HTTPException(status_code=403, detail="Invalid password")
+
+    token, expires_at = _issue_session()
+    expires_dt = datetime.fromtimestamp(expires_at, tz=timezone.utc)
+    max_age = int(timedelta(seconds=SESSION_TTL_SECONDS).total_seconds())
+    secure_cookie = os.getenv("ENABLE_SECURE_COOKIES", "0").lower() in {"1", "true", "yes", "on"}
+    response.set_cookie(
+        key=SESSION_COOKIE,
+        value=token,
+        max_age=max_age,
+        httponly=True,
+        secure=secure_cookie,
+        samesite="lax",
+        path=PREFIX or "/",
+    )
+    return {"token": token, "expires": expires_dt.isoformat()}
+
+
 @app.post("/api/custom-message")
-async def custom_message(body: Dict[str, Any] = Body(...)) -> Dict[str, str]:
+async def custom_message(request: Request, body: Dict[str, Any] = Body(...)) -> Dict[str, str]:
+    token = _extract_session_token(request)
+    if not _validate_session(token):
+        raise HTTPException(status_code=401, detail="Authentication required")
     if not isinstance(body, dict):
         raise HTTPException(status_code=400, detail="Invalid payload")
 
@@ -520,4 +601,5 @@ async def custom_message(body: Dict[str, Any] = Body(...)) -> Dict[str, str]:
 if PREFIX:
     # Alternate path for deployments served from a subdirectory.
     app.add_api_route(f"{PREFIX}/api/channel", channel_info, methods=["GET"])
+    app.add_api_route(f"{PREFIX}/api/session", create_session, methods=["POST"])
     app.add_api_route(f"{PREFIX}/api/custom-message", custom_message, methods=["POST"])

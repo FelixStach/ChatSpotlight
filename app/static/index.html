@@ -396,6 +396,89 @@
       gap: 1rem;
     }
 
+    .auth-overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(8px);
+      z-index: 30;
+      padding: 1rem;
+    }
+
+    .auth-overlay[data-open="true"] {
+      display: flex;
+    }
+
+    .auth-card {
+      width: min(460px, 100%);
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 18px;
+      box-shadow: var(--shadow-soft);
+      padding: 1.4rem 1.6rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+
+    .auth-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+    }
+
+    .auth-subtitle {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.4;
+    }
+
+    .auth-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .auth-field label {
+      font-weight: 600;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .auth-input {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid var(--panel-border);
+      padding: 0.8rem 0.9rem;
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-primary);
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    .auth-input:focus {
+      outline: none;
+      border-color: rgba(248, 212, 119, 0.8);
+      box-shadow: 0 0 0 2px rgba(248, 212, 119, 0.18);
+    }
+
+    .auth-error {
+      color: #f29b9b;
+      min-height: 1.2rem;
+      font-size: 0.92rem;
+    }
+
+    .auth-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.6rem;
+      margin-top: 0.2rem;
+    }
+
     .confirm-title {
       font-size: 1.1rem;
       font-weight: 700;
@@ -1076,6 +1159,24 @@
     </li>
   </template>
 
+  <div id="auth-overlay" class="auth-overlay" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+    <div class="auth-card">
+      <div class="auth-title" id="auth-title">Moderatorzugang erforderlich</div>
+      <p class="auth-subtitle">Gib das Passwort ein, um Nachrichten zu spotlighten, zu pinnen oder zu senden.</p>
+      <form id="auth-form" class="auth-form" autocomplete="off">
+        <div class="auth-field">
+          <label for="auth-password">Passwort</label>
+          <input id="auth-password" class="auth-input" type="password" name="password" required />
+        </div>
+        <div id="auth-error" class="auth-error" role="status" aria-live="polite"></div>
+        <div class="auth-actions">
+          <button type="button" class="btn-secondary" id="auth-cancel">Abbrechen</button>
+          <button type="submit" class="btn-primary">Entsperren</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <div id="custom-confirm" class="confirm-overlay" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
     <div class="confirm-card">
       <div class="confirm-meta">
@@ -1113,9 +1214,15 @@
     const confirmSendBtn = document.querySelector('#confirm-send');
     const confirmCancelBtn = document.querySelector('#confirm-cancel');
     const confirmSpotlightBtn = document.querySelector('#confirm-spotlight');
+    const authOverlay = document.querySelector('#auth-overlay');
+    const authForm = document.querySelector('#auth-form');
+    const authInput = document.querySelector('#auth-password');
+    const authError = document.querySelector('#auth-error');
+    const authCancel = document.querySelector('#auth-cancel');
 
     const baseUrl = new URL('.', window.location.href);
     const apiChannelUrl = new URL('api/channel', baseUrl);
+    const apiSessionUrl = new URL('api/session', baseUrl);
     const apiCustomMessageUrl = new URL('api/custom-message', baseUrl);
     const wsUrl = new URL('ws/chat', baseUrl);
     wsUrl.protocol = wsUrl.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -1125,6 +1232,8 @@
     const MAX_CHAT_MESSAGES = 100;
     const LONG_QUEUE_TEXT_THRESHOLD = 140;
     const RUMBLE_TTL_MS = 1800; // keep rumble intents alive across queue re-renders
+    const SESSION_STORAGE_KEY = 'chatspotlight-session';
+    const SESSION_HEADER = 'X-Session-Token';
 
     const messageStore = new Map();
     const state = {
@@ -1137,6 +1246,46 @@
     let pendingMessage = null;
     let composerOpen = false;
     let pendingSpotlight = true;
+    let authToken = sessionStorage.getItem(SESSION_STORAGE_KEY) || null;
+    let pendingAuthAction = null;
+
+    const setAuthToken = (token) => {
+      authToken = token || null;
+      if (authToken) {
+        sessionStorage.setItem(SESSION_STORAGE_KEY, authToken);
+      } else {
+        sessionStorage.removeItem(SESSION_STORAGE_KEY);
+      }
+    };
+
+    const withSession = (payload = {}) => {
+      if (authToken) payload.session = authToken;
+      return payload;
+    };
+
+    const closeAuthModal = () => {
+      if (!authOverlay) return;
+      authOverlay.removeAttribute('data-open');
+      pendingAuthAction = null;
+      if (authForm) authForm.reset();
+      if (authError) authError.textContent = '';
+    };
+
+    const openAuthModal = (nextAction = null) => {
+      pendingAuthAction = nextAction;
+      if (!authOverlay) return;
+      authOverlay.setAttribute('data-open', 'true');
+      if (authError) authError.textContent = '';
+      if (authInput) setTimeout(() => authInput.focus({ preventScroll: true }), 30);
+    };
+
+    const ensureAuth = (action) => {
+      if (authToken) {
+        if (typeof action === 'function') action();
+        return;
+      }
+      openAuthModal(action);
+    };
     primeEmptyQueue();
     loadChannelName();
 
@@ -1187,6 +1336,54 @@
     if (queueList) {
       const queueObserver = new MutationObserver(() => flushPendingRumbles());
       queueObserver.observe(queueList, { childList: true });
+    }
+
+    if (authForm) {
+      authForm.addEventListener('submit', async (evt) => {
+        evt.preventDefault();
+        const password = (authInput?.value || '').trim();
+        if (!password) return;
+        try {
+          const resp = await fetch(apiSessionUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password }),
+          });
+          if (!resp.ok) {
+            throw new Error(`HTTP ${resp.status}`);
+          }
+          const data = await resp.json();
+          if (!data?.token) throw new Error('Missing token');
+          setAuthToken(data.token);
+          closeAuthModal();
+          const action = pendingAuthAction;
+          pendingAuthAction = null;
+          if (typeof action === 'function') action();
+        } catch (err) {
+          if (authError) authError.textContent = 'Falsches Passwort. Bitte erneut versuchen.';
+          console.warn('Authentication failed', err);
+        }
+      });
+    }
+
+    if (authCancel) {
+      authCancel.addEventListener('click', (evt) => {
+        evt.preventDefault();
+        closeAuthModal();
+      });
+    }
+
+    if (authOverlay) {
+      authOverlay.addEventListener('click', (evt) => {
+        if (evt.target === authOverlay) closeAuthModal();
+      });
+      document.addEventListener('keydown', (evt) => {
+        if (authOverlay.getAttribute('data-open') !== 'true') return;
+        if (evt.key === 'Escape') {
+          evt.preventDefault();
+          closeAuthModal();
+        }
+      });
     }
 
     function safeParse(raw) {
@@ -1258,24 +1455,28 @@
     }
 
     function requestHighlight(messageId, { source = 'queue' } = {}) {
-      if (!socket || socket.readyState !== WebSocket.OPEN) return;
-      const isHighlighted = state.highlightedIds.has(messageId);
+      ensureAuth(() => {
+        if (!socket || socket.readyState !== WebSocket.OPEN) return;
+        const isHighlighted = state.highlightedIds.has(messageId);
 
-      if (source === 'chat') {
-        // Chat clicks should only promote to highlighted; never clear an existing highlight.
-        if (isHighlighted) return;
-        socket.send(JSON.stringify({ type: 'highlight', id: messageId, source }));
-        return;
-      }
+        if (source === 'chat') {
+          // Chat clicks should only promote to highlighted; never clear an existing highlight.
+          if (isHighlighted) return;
+          socket.send(JSON.stringify(withSession({ type: 'highlight', id: messageId, source })));
+          return;
+        }
 
-      const type = isHighlighted ? 'clearHighlight' : 'highlight';
-      socket.send(JSON.stringify({ type, id: messageId, source }));
+        const type = isHighlighted ? 'clearHighlight' : 'highlight';
+        socket.send(JSON.stringify(withSession({ type, id: messageId, source })));
+      });
     }
 
     function requestPinToggle(messageId, isPinned) {
-      if (!socket || socket.readyState !== WebSocket.OPEN) return;
-      const type = isPinned ? 'unpin' : 'pin';
-      socket.send(JSON.stringify({ type, id: messageId }));
+      ensureAuth(() => {
+        if (!socket || socket.readyState !== WebSocket.OPEN) return;
+        const type = isPinned ? 'unpin' : 'pin';
+        socket.send(JSON.stringify(withSession({ type, id: messageId })));
+      });
     }
 
     function updateQueue(items) {
@@ -1478,10 +1679,12 @@
 
     function triggerRumble(messageId, { broadcast = false } = {}) {
       if (!messageId) return;
-      enqueueRumble(messageId);
-      if (broadcast && socket && socket.readyState === WebSocket.OPEN) {
-        socket.send(JSON.stringify({ type: 'rumble', id: messageId }));
-      }
+      ensureAuth(() => {
+        enqueueRumble(messageId);
+        if (broadcast && socket && socket.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify(withSession({ type: 'rumble', id: messageId })));
+        }
+      });
     }
 
     function enqueueRumble(messageId) {
@@ -1665,9 +1868,17 @@
         try {
           const resp = await fetch(apiCustomMessageUrl, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              [SESSION_HEADER]: authToken || '',
+            },
             body: JSON.stringify({ text, user, spotlight: pendingSpotlight }),
           });
+          if (resp.status === 401 || resp.status === 403) {
+            setAuthToken(null);
+            openAuthModal(() => sendPendingMessage());
+            return;
+          }
           if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
           customTextArea.value = '';
         } catch (err) {
@@ -1679,14 +1890,17 @@
 
       customForm.addEventListener('submit', (evt) => {
         evt.preventDefault();
-        if (!composerOpen) setComposer(true);
-        const text = customTextArea.value.trim();
-        const user = (Array.from(roleInputs).find((input) => input.checked)?.value || 'Zuschauer').trim();
-        if (!text) return;
-        if (!openConfirm(text, user)) {
-          pendingMessage = { text, user };
-          sendPendingMessage();
-        }
+        const handleSubmit = () => {
+          if (!composerOpen) setComposer(true);
+          const text = customTextArea.value.trim();
+          const user = (Array.from(roleInputs).find((input) => input.checked)?.value || 'Zuschauer').trim();
+          if (!text) return;
+          if (!openConfirm(text, user)) {
+            pendingMessage = { text, user };
+            sendPendingMessage();
+          }
+        };
+        ensureAuth(handleSubmit);
       });
 
       if (confirmSendBtn) {
