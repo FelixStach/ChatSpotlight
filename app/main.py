@@ -10,6 +10,7 @@ from collections import deque
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Deque, Dict, List, Optional, Set, Tuple
+from contextlib import suppress
 
 from fastapi import Body, FastAPI, HTTPException, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
@@ -34,6 +35,7 @@ RETRY_DELAY_SECONDS = 5
 USE_FAKE_STREAM = False
 FAKE_CHANNEL_NAME = "demo"
 TOTAL_QUEUE_SLOTS = 3
+IRC_MESSAGE_LIMIT = 380
 
 # Routing and session settings
 PATH_PREFIX = ""
@@ -57,6 +59,7 @@ message_lookup: Dict[str, Dict[str, Any]] = {}
 highlight_queue: List[Dict[str, Any]] = []
 active_sessions: Dict[str, float] = {}
 ADMIN_PASSWORD: Optional[str] = None
+twitch_send_queue: Optional[asyncio.Queue[str]] = None
 
 
 def required_file(path: Path, label: str) -> str:
@@ -214,6 +217,51 @@ def remember_message(payload: Dict[str, Any]) -> None:
             if not any(entry.get("id") == evicted_id for entry in highlight_queue):
                 message_lookup.pop(evicted_id, None)
     message_lookup[payload["id"]] = payload
+
+
+def _ensure_twitch_queue() -> asyncio.Queue[str]:
+    global twitch_send_queue
+    if twitch_send_queue is None:
+        twitch_send_queue = asyncio.Queue(maxsize=100)
+    return twitch_send_queue
+
+
+def _prepare_irc_message(text: str) -> str:
+    cleaned = " ".join(text.split())
+    if not cleaned:
+        return ""
+    return cleaned[:IRC_MESSAGE_LIMIT]
+
+
+async def enqueue_twitch_message(text: str) -> None:
+    if USE_FAKE_STREAM:
+        logging.info("Twitch send skipped; fake stream enabled")
+        return
+
+    queue = _ensure_twitch_queue()
+    prepared = _prepare_irc_message(text)
+    if not prepared:
+        return
+
+    try:
+        queue.put_nowait(prepared)
+    except asyncio.QueueFull:
+        logging.warning("Twitch send queue full; dropping message")
+
+
+async def _drain_twitch_queue(writer: asyncio.StreamWriter, channel: str) -> None:
+    queue = _ensure_twitch_queue()
+    while True:
+        text = await queue.get()
+        try:
+            command = f"PRIVMSG #{channel} :{text}\r\n"
+            writer.write(command.encode("utf-8"))
+            await writer.drain()
+        except asyncio.CancelledError:
+            raise
+        except Exception as err:
+            logging.error("Failed to send Twitch message: %s", err)
+            break
 
 
 def queue_snapshot() -> List[Dict[str, Any]]:
@@ -420,12 +468,14 @@ async def handle_client_event(event: Any) -> None:
 
 
 async def twitch_chat_loop(username: str, token: str, channel: str) -> None:
+    _ensure_twitch_queue()
     channel = channel.lstrip("#").lower()
     token = token if token.startswith("oauth:") else f"oauth:{token}"
 
     while True:
         reader: Optional[asyncio.StreamReader] = None
         writer: Optional[asyncio.StreamWriter] = None
+        send_task: Optional[asyncio.Task] = None
         try:
             logging.info("Connecting to Twitch IRC as %s", username)
             ssl_context = ssl.create_default_context()
@@ -439,6 +489,8 @@ async def twitch_chat_loop(username: str, token: str, channel: str) -> None:
             for line in auth_commands:
                 writer.write(line.encode("utf-8"))
             await writer.drain()
+
+            send_task = asyncio.create_task(_drain_twitch_queue(writer, channel))
 
             while True:
                 raw_bytes = await reader.readline()
@@ -460,6 +512,10 @@ async def twitch_chat_loop(username: str, token: str, channel: str) -> None:
                 if payload:
                     await broadcast_message(payload)
         except asyncio.CancelledError:
+            if send_task:
+                send_task.cancel()
+                with suppress(asyncio.CancelledError):
+                    await send_task
             if writer:
                 writer.close()
                 await writer.wait_closed()
@@ -468,6 +524,10 @@ async def twitch_chat_loop(username: str, token: str, channel: str) -> None:
             logging.error("Twitch loop error: %s", err)
             await asyncio.sleep(RETRY_DELAY_SECONDS)
         finally:
+            if send_task:
+                send_task.cancel()
+                with suppress(asyncio.CancelledError):
+                    await send_task
             if writer:
                 writer.close()
                 await writer.wait_closed()
@@ -522,6 +582,7 @@ async def startup_event() -> None:
         token = required_file(TOKEN_FILE, "Twitch OAuth token")
         channel = required_file(CHANNEL_FILE, "Twitch channel")
         CHANNEL_NAME = channel.lstrip("#")
+        _ensure_twitch_queue()
         app.state.chat_task = asyncio.create_task(twitch_chat_loop(username, token, channel))
         mode = "twitch"
     app.state.channel_name = CHANNEL_NAME
@@ -549,9 +610,15 @@ async def channel_info() -> Dict[str, str]:
         except RuntimeError:
             channel = "unknown"
 
-    clean = channel.lstrip("#")
-    app.state.channel_name = clean
-    return {"channel": clean}
+    clean_channel = channel.lstrip("#")
+    app.state.channel_name = clean_channel
+
+    try:
+        bot_username = required_file(USERNAME_FILE, "Twitch username").strip() or "unknown"
+    except RuntimeError:
+        bot_username = "unknown"
+
+    return {"channel": clean_channel, "bot_username": bot_username}
 
 
 @app.post("/api/session")
@@ -596,6 +663,8 @@ async def custom_message(request: Request, body: Dict[str, Any] = Body(...)) -> 
 
     spotlight_raw = body.get("spotlight", True)
     spotlight = bool(spotlight_raw)
+    twitch_raw = body.get("twitch", False)
+    twitch = bool(twitch_raw)
 
     payload = build_message_payload(user=user, text=text)
     payload["custom"] = True
@@ -604,6 +673,8 @@ async def custom_message(request: Request, body: Dict[str, Any] = Body(...)) -> 
     if spotlight:
         push_highlight_queue(payload, move_to_front=True)
         await broadcast_queue()
+    if twitch:
+        await enqueue_twitch_message(text)
     return {"status": "ok", "id": payload["id"]}
 
 
