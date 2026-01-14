@@ -803,6 +803,25 @@
       word-break: break-word;
     }
 
+    .chat-emote,
+    .queue-emote {
+      display: inline-block;
+      vertical-align: middle;
+      margin: -0.08em 0.12em;
+      object-fit: contain;
+      image-rendering: -webkit-optimize-contrast;
+    }
+
+    .chat-emote {
+      width: 28px;
+      height: 28px;
+    }
+
+    .queue-emote {
+      width: 42px;
+      height: 42px;
+    }
+
     .timestamp {
       font-size: 0.78rem;
       color: var(--text-muted);
@@ -1567,6 +1586,44 @@
       return NaN;
     }
 
+    function normalizeEmotes(rawEmotes, text = '') {
+      if (!Array.isArray(rawEmotes) || rawEmotes.length === 0) return [];
+      const limit = Math.max(0, text.length);
+      const emotes = [];
+
+      rawEmotes.forEach((emote) => {
+        if (!emote || emote.id === undefined || emote.id === null) return;
+        const positions = Array.isArray(emote.positions) ? emote.positions : [];
+        const normalizedPositions = positions
+          .map((pair) => {
+            if (!Array.isArray(pair) || pair.length < 2) return null;
+            const start = Number(pair[0]);
+            const end = Number(pair[1]);
+            if (!Number.isFinite(start) || !Number.isFinite(end)) return null;
+            if (start < 0 || end < start || end >= limit) return null;
+            return [start, end];
+          })
+          .filter(Boolean)
+          .sort((a, b) => a[0] - b[0]);
+
+        if (!normalizedPositions.length) return;
+
+        const [firstStart, firstEnd] = normalizedPositions[0];
+        const codeSample =
+          typeof emote.code === 'string' && emote.code.length
+            ? emote.code
+            : text.slice(firstStart, firstEnd + 1);
+
+        emotes.push({
+          id: String(emote.id),
+          code: codeSample,
+          positions: normalizedPositions,
+        });
+      });
+
+      return emotes.sort((a, b) => a.positions[0][0] - b.positions[0][0]);
+    }
+
     function normalizeMessage(raw) {
       if (!raw || !raw.id) return null;
       const timestampMs = toEpochMillis(raw.timestamp ?? Date.now());
@@ -1575,6 +1632,7 @@
         id: raw.id,
         user: raw.user ?? 'unknown',
         text: raw.text ?? '',
+        emotes: normalizeEmotes(raw.emotes, raw.text ?? ''),
         timestamp: raw.timestamp ?? new Date(timestampMs).toISOString(),
         timestampMs,
         highlighted: Boolean(raw.highlighted),
@@ -1596,6 +1654,67 @@
       });
     }
 
+    function renderTextWithEmotes(container, message, { variant = 'chat' } = {}) {
+      if (!container || !message) return;
+      const text = message.text ?? '';
+      const emotes = Array.isArray(message.emotes) ? message.emotes : [];
+      container.textContent = '';
+
+      if (!text) return;
+      if (!emotes.length) {
+        container.textContent = text;
+        return;
+      }
+
+      const markers = [];
+      emotes.forEach((emote) => {
+        (emote.positions || []).forEach((pos) => {
+          if (!Array.isArray(pos) || pos.length < 2) return;
+          const start = Number(pos[0]);
+          const end = Number(pos[1]);
+          if (!Number.isFinite(start) || !Number.isFinite(end)) return;
+          if (start < 0 || end < start || end >= text.length) return;
+          markers.push({
+            start,
+            end,
+            id: emote.id,
+            code: emote.code || text.slice(start, end + 1),
+          });
+        });
+      });
+
+      if (!markers.length) {
+        container.textContent = text;
+        return;
+      }
+
+      markers.sort((a, b) => a.start - b.start);
+      let cursor = 0;
+      markers.forEach((marker) => {
+        if (marker.start > cursor) {
+          container.appendChild(document.createTextNode(text.slice(cursor, marker.start)));
+        } else if (marker.start < cursor) {
+          return;
+        }
+
+        const safeEnd = Math.min(marker.end, text.length - 1);
+        const alt = marker.code || text.slice(marker.start, safeEnd + 1);
+        const img = document.createElement('img');
+        img.src = `https://static-cdn.jtvnw.net/emoticons/v2/${marker.id}/default/dark/1.0`;
+        img.alt = alt;
+        img.title = alt;
+        img.loading = 'lazy';
+        img.className = variant === 'queue' ? 'queue-emote' : 'chat-emote';
+        container.appendChild(img);
+
+        cursor = safeEnd + 1;
+      });
+
+      if (cursor < text.length) {
+        container.appendChild(document.createTextNode(text.slice(cursor)));
+      }
+    }
+
     function addChatMessage(raw, { allowDuplicate = true, pulse = true } = {}) {
       const message = upsertMessage(raw);
       if (!message || !chatTemplate || !chatStream) return;
@@ -1608,7 +1727,7 @@
       node.dataset.messageId = message.id;
       const badgeEl = node.querySelector('.badge');
       if (badgeEl) badgeEl.textContent = message.user;
-      node.querySelector('.text').textContent = message.text;
+      renderTextWithEmotes(node.querySelector('.text'), message, { variant: 'chat' });
       node.querySelector('.timestamp').textContent = formatClockTime(message.timestampMs);
       node.classList.toggle('chat-message--custom', message.custom === true);
       node.addEventListener('click', () => requestHighlight(message.id, { source: 'chat' }));
@@ -1736,7 +1855,7 @@
       if (userEl) userEl.textContent = message?.user ?? payload.user ?? '';
       const queueText = message?.text ?? payload.text ?? '';
       if (textEl) {
-        textEl.textContent = queueText;
+        renderTextWithEmotes(textEl, message || payload, { variant: 'queue' });
         const isCompact = queueText.length > LONG_QUEUE_TEXT_THRESHOLD;
         textEl.classList.toggle('queue-text--compact', isCompact);
       }

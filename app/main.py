@@ -194,12 +194,13 @@ if PREFIX:
     app.router.add_websocket_route(f"{PREFIX}/ws/chat", websocket_endpoint)
 
 
-def build_message_payload(user: str, text: str) -> Dict[str, Any]:
+def build_message_payload(user: str, text: str, emotes: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
     return {
         "type": "chat",
         "id": str(uuid.uuid4()),
         "user": user,
         "text": text,
+        "emotes": emotes or [],
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
@@ -481,12 +482,13 @@ async def twitch_chat_loop(username: str, token: str, channel: str) -> None:
             ssl_context = ssl.create_default_context()
             reader, writer = await asyncio.open_connection(IRC_HOST, IRC_PORT, ssl=ssl_context)
 
+            capability_commands = ["CAP REQ :twitch.tv/tags twitch.tv/commands\r\n"]
             auth_commands = [
                 f"PASS {token}\r\n",
                 f"NICK {username}\r\n",
                 f"JOIN #{channel}\r\n",
             ]
-            for line in auth_commands:
+            for line in capability_commands + auth_commands:
                 writer.write(line.encode("utf-8"))
             await writer.drain()
 
@@ -531,17 +533,86 @@ async def twitch_chat_loop(username: str, token: str, channel: str) -> None:
             if writer:
                 writer.close()
                 await writer.wait_closed()
+    
+
+def _unescape_tag_value(value: str) -> str:
+    # Twitch IRC tag escaping rules
+    return (
+        value.replace("\\s", " ")
+        .replace("\\:", ";")
+        .replace("\\r", "\r")
+        .replace("\\n", "\n")
+        .replace("\\\\", "\\")
+    )
+
+
+def _parse_tags(raw_tags: str) -> Dict[str, str]:
+    tags: Dict[str, str] = {}
+    if not raw_tags:
+        return tags
+    cleaned = raw_tags.lstrip("@")
+    for part in cleaned.split(";"):
+        if "=" not in part:
+            continue
+        key, value = part.split("=", maxsplit=1)
+        tags[key] = _unescape_tag_value(value)
+    return tags
+
+
+def _parse_emote_tag(emote_spec: str, message: str) -> List[Dict[str, Any]]:
+    if not emote_spec:
+        return []
+
+    emotes: List[Dict[str, Any]] = []
+    for entry in emote_spec.split("/"):
+        if not entry:
+            continue
+        emote_id, _, positions_raw = entry.partition(":")
+        if not emote_id or not positions_raw:
+            continue
+
+        positions: List[Tuple[int, int]] = []
+        for chunk in positions_raw.split(","):
+            start_str, dash, end_str = chunk.partition("-")
+            if not dash:
+                continue
+            try:
+                start = int(start_str)
+                end = int(end_str)
+            except ValueError:
+                continue
+            if start < 0 or end < start or end >= len(message):
+                continue
+            positions.append((start, end))
+
+        if positions:
+            sample_start, sample_end = positions[0]
+            code = message[sample_start : sample_end + 1]
+            emotes.append({"id": emote_id, "positions": positions, "code": code})
+
+    return emotes
 
 
 def parse_privmsg(raw: str) -> Optional[Dict[str, Any]]:
     try:
-        prefix, _, trailing = raw.partition(" :")
+        tags_raw = ""
+        remainder = raw
+        if raw.startswith("@"):
+            tags_raw, _, remainder = raw.partition(" ")
+
+        prefix, _, trailing = remainder.partition(" :")
         if not trailing:
             return None
+
         user_section = prefix.split("!", maxsplit=1)[0]
         user = user_section[1:] if user_section.startswith(":") else user_section
-        text = trailing
-        return build_message_payload(user=user, text=text)
+
+        tags = _parse_tags(tags_raw)
+        display_name = tags.get("display-name") or user
+        text = _unescape_tag_value(trailing)
+        emotes = _parse_emote_tag(tags.get("emotes", ""), text)
+
+        return build_message_payload(user=display_name, text=text, emotes=emotes)
     except Exception as err:
         logging.debug("Failed to parse message '%s': %s", raw, err)
         return None
