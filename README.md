@@ -2,7 +2,7 @@
 
 A FastAPI + WebSocket service that ingests a Twitch channel and drives a shared, show-friendly spotlight queue. Moderators can pin, rumble, and curate custom messages; the audience sees a synchronized spotlight across every connected browser.
 
-## Demo
+## Preview
 ![Spotlight chat demo preview](preview.jpg)
 
 ## Features
