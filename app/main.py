@@ -38,8 +38,6 @@ TOTAL_QUEUE_SLOTS = 3
 IRC_MESSAGE_LIMIT = 380
 
 # Routing and session settings
-PATH_PREFIX = ""
-PREFIX = f"/{PATH_PREFIX}" if PATH_PREFIX else ""
 SESSION_TTL_SECONDS = 43200
 SESSION_HEADER = "X-Session-Token"
 SESSION_COOKIE = "chatspotlight_session"
@@ -50,9 +48,6 @@ CHANNEL_NAME: Optional[str] = None
 
 app = FastAPI(title="Twitch Chat Helper", version="1.0.0")
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
-if PREFIX:
-    # Serve static files under the prefixed path for reverse-proxy setups.
-    app.mount(f"{PREFIX}/static", StaticFiles(directory=STATIC_DIR), name="static-prefixed")
 
 recent_messages: Deque[Dict[str, Any]] = deque(maxlen=HISTORY_LIMIT)
 message_lookup: Dict[str, Dict[str, Any]] = {}
@@ -166,11 +161,6 @@ async def root() -> FileResponse:
     return FileResponse(STATIC_DIR / "index.html")
 
 
-if PREFIX:
-    # Mirror the root route under the path prefix so proxied deployments work.
-    app.add_api_route(f"{PREFIX}/", root, methods=["GET"], include_in_schema=False)
-
-
 @app.websocket("/ws/chat")
 async def websocket_endpoint(websocket: WebSocket) -> None:
     await manager.connect(websocket)
@@ -187,11 +177,6 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
     except Exception:
         await manager.disconnect(websocket)
         raise
-
-
-if PREFIX:
-    # Expose the websocket under the prefixed path for reverse proxies.
-    app.router.add_websocket_route(f"{PREFIX}/ws/chat", websocket_endpoint)
 
 
 def build_message_payload(user: str, text: str, emotes: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
@@ -710,7 +695,7 @@ async def create_session(response: Response, body: Dict[str, Any] = Body(...)) -
         httponly=True,
         secure=secure_cookie,
         samesite="lax",
-        path=PREFIX or "/",
+        path="/",
     )
     return {"token": token, "expires": expires_dt.isoformat()}
 
@@ -747,10 +732,3 @@ async def custom_message(request: Request, body: Dict[str, Any] = Body(...)) -> 
     if twitch:
         await enqueue_twitch_message(text)
     return {"status": "ok", "id": payload["id"]}
-
-
-if PREFIX:
-    # Alternate path for deployments served from a subdirectory.
-    app.add_api_route(f"{PREFIX}/api/channel", channel_info, methods=["GET"])
-    app.add_api_route(f"{PREFIX}/api/session", create_session, methods=["POST"])
-    app.add_api_route(f"{PREFIX}/api/custom-message", custom_message, methods=["POST"])

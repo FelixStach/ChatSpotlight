@@ -1,4 +1,4 @@
-# Twitch Chat Helper
+# ChatSpotlight
 
 A FastAPI + WebSocket service that ingests a Twitch channel and drives a shared, show-friendly spotlight queue. Moderators can pin, rumble, and curate custom messages; the audience sees a synchronized spotlight across every connected browser.
 
@@ -45,14 +45,50 @@ A FastAPI + WebSocket service that ingests a Twitch channel and drives a shared,
 - Emotes render inline in chat and spotlight. Long texts auto-compact; chat auto-scrolls unless you scroll up.
 
 ## API / Endpoints
-- WebSocket: `/ws/chat` (also under the optional `PATH_PREFIX` if configured). Sends history, live chat, highlight queue, and rumble events.
+- WebSocket: `/ws/chat`. Sends history, live chat, highlight queue, and rumble events.
 - REST: `/api/channel` (channel + bot name), `/api/session` (POST password → session token cookie), `/api/custom-message` (POST text/user with optional `spotlight` and `twitch` booleans; requires auth).
 
 ## Configuration Notes (edit [app/main.py](app/main.py))
 - `HISTORY_LIMIT` (chat history fan-out), `TOTAL_QUEUE_SLOTS` (spotlight slots), `IRC_MESSAGE_LIMIT` (outbound Twitch length guard).
 - `SESSION_TTL_SECONDS`, `SESSION_COOKIE`, `SESSION_HEADER`, `SECURE_COOKIES` (auth session handling).
-- `PATH_PREFIX` to serve behind a subdirectory; static and WebSocket routes mirror the prefix automatically.
 - `USE_FAKE_STREAM`, `FAKE_CHANNEL_NAME` for offline demos.
+
+## Running Behind Nginx
+**Why**: Terminate TLS, serve from a sub-path (e.g., `/letsplay/`), and keep WebSocket upgrades stable while the Uvicorn server stays on `127.0.0.1:8000`.
+
+**Steps**:
+1) Start Uvicorn locally: `uvicorn app.main:app --host 127.0.0.1 --port 8000`.
+2) Add these locations to your Nginx site config (replace the server block paths as needed):
+
+```
+   location /letsplay/ {
+      proxy_pass http://127.0.0.1:8000/;
+      proxy_http_version 1.1;
+
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection "upgrade";
+
+      proxy_set_header Host $host;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-Proto $scheme;
+   }
+
+   location /ws/chat {
+      proxy_pass http://127.0.0.1:8000/ws/chat;
+      proxy_http_version 1.1;
+
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection "upgrade";
+
+      proxy_set_header Host $host;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-Proto $scheme;
+   }
+```
+
+Keep `proxy_http_version 1.1` and the `Upgrade/Connection` headers so WebSocket upgrades succeed. If you proxy under a sub-path like `/letsplay/`, mirror it for the WebSocket location (`/letsplay/ws/chat`).
 
 ## How It Works
 - On startup, Twitch IRC connects and streams messages (or the fake generator runs). Parsed lines become JSON payloads stored in a deque-backed history and lookup map.
