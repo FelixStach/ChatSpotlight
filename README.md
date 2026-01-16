@@ -19,7 +19,7 @@ A FastAPI + WebSocket service that ingests a Twitch channel and drives a shared,
    ```bash
    python -m venv .venv
    .\.venv\Scripts\activate    # Windows
-   pip install -r requirements.txt
+   source .venv/bin/activate   # Linux/macOS  pip install -r requirements.txt
    ```
 
 2. **Configure Twitch + password**
