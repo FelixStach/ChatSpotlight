@@ -9,7 +9,8 @@ A FastAPI + WebSocket service that ingests a Twitch channel and drives a shared,
 - Twitch IRC ingestion with emote rendering, short rolling history, and a capped outbound command queue so custom messages can also be sent to Twitch chat.
 - Moderator-gated controls (highlight, clear, pin/unpin, rumble, custom send) using a session cookie plus `X-Session-Token` header; the password is stored in [app/config/password.txt](app/config/password.txt).
 - Spotlight queue with three slots, pinning, rumble alerts, and visual states for highlighted or custom-sent messages.
-- In-browser composer (German copy) with role presets (“Zuschauer”, “Intern”), clipboard paste, and a confirmation modal that can optionally spotlight and/or post to Twitch.
+- In-browser composer with role presets (“Viewer”, “Internal”), clipboard paste, and a confirmation modal that can spotlight and/or post to Twitch.
+- Full localization (English and German) with a language picker in Settings; defaults to German.
 - Mobile-friendly, responsive UI with auto-scroll, long-message compaction, and reconnect handling.
 - Fake chat generator switch for offline demos.
 
@@ -40,7 +41,8 @@ A FastAPI + WebSocket service that ingests a Twitch channel and drives a shared,
 ## Using the UI
 - Click any chat message to spotlight it. Click it again (from the queue) to clear, or use the “Pin/Unpin” controls per slot.
 - “~” triggers a rumble animation on a slot; the action also broadcasts to other viewers.
-- The composer opens via “Nachricht verfassen”; submit with Enter. A confirmation modal lets you toggle Spotlight and Twitch posting (Twitch is available for the “Zuschauer” role and uses the bot account).
+- Open the composer via “Compose message”; submit with Enter. A confirmation modal lets you toggle Spotlight and Twitch posting (Twitch is available for the “Viewer” role and uses the bot account).
+- Use the gear icon → Settings to switch the UI language (English/German).
 - Moderator actions prompt for the password once per browser session; a session cookie plus `X-Session-Token` keep it active for 12h.
 - Emotes render inline in chat and spotlight. Long texts auto-compact; chat auto-scrolls unless you scroll up.
 
