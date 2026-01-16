@@ -424,6 +424,220 @@
       gap: 0.85rem;
     }
 
+    .settings-overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(7px);
+      z-index: 28;
+      padding: 1rem;
+    }
+
+    .settings-overlay[data-open="true"] {
+      display: flex;
+    }
+
+    .settings-card {
+      width: min(640px, 100%);
+      background: linear-gradient(140deg, rgba(23, 25, 52, 0.78), rgba(9, 11, 24, 0.94));
+      border: 1px solid rgba(248, 212, 119, 0.18);
+      border-radius: 22px;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      padding: 1.5rem 1.6rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+    .settings-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .settings-title {
+      font-size: 1.08rem;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    .settings-subtitle {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-top: 0.2rem;
+    }
+
+    .settings-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.9rem;
+    }
+
+    .setting-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.9rem 1rem;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 16px;
+      background: linear-gradient(120deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+
+    .setting-label {
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      font-size: 0.95rem;
+    }
+
+    .setting-hint {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-top: 0.2rem;
+    }
+
+    .setting-value {
+      color: var(--text-primary);
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      padding: 0.35rem 0.8rem;
+      min-width: 72px;
+      text-align: center;
+    }
+
+    .language-picker {
+      position: relative;
+      display: inline-flex;
+      width: 100%;
+      max-width: 220px;
+      justify-content: flex-end;
+    }
+
+    .settings-select {
+      min-width: 170px;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      background:
+        linear-gradient(150deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)),
+        rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 12px;
+      color: var(--text-primary);
+      padding: 0.5rem 2.3rem 0.5rem 0.85rem;
+      font-size: 0.98rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: border-color 180ms ease, background 200ms ease, box-shadow 220ms ease;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 10px 22px rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(6px);
+      line-height: 1.2;
+    }
+
+    .settings-select:hover {
+      border-color: var(--accent-soft);
+      background: linear-gradient(150deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 12px 26px rgba(0, 0, 0, 0.22);
+    }
+
+    .settings-select:focus-visible {
+      outline: 2px solid rgba(248, 212, 119, 0.7);
+      outline-offset: 2px;
+    }
+
+    .language-menu {
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      min-width: 180px;
+      background: rgba(11, 13, 28, 0.96);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 12px;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      padding: 0.35rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      visibility: hidden;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 6;
+    }
+
+    .language-menu[data-open="true"] {
+      visibility: visible;
+      opacity: 1;
+      pointer-events: auto;
+      animation: fadeInMenu 120ms ease;
+    }
+
+    .language-option {
+      width: 100%;
+      text-align: left;
+      border: none;
+      background: transparent;
+      color: var(--text-primary);
+      font-weight: 700;
+      padding: 0.55rem 0.65rem;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 120ms ease, color 120ms ease;
+    }
+
+    .language-option:hover,
+    .language-option[aria-current="true"] {
+      background: rgba(248, 212, 119, 0.14);
+      color: #fcebc2;
+    }
+
+    @keyframes fadeInMenu {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .settings-close {
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-primary);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 140ms ease, border-color 140ms ease, transform 120ms ease;
+      flex-shrink: 0;
+    }
+
+    .settings-close:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: var(--accent-soft);
+    }
+
+    .settings-close:active {
+      transform: translateY(1px);
+    }
+
+    .settings-close svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
     .auth-title {
       font-size: 1.1rem;
       font-weight: 700;
@@ -844,11 +1058,47 @@
       margin-bottom: 0.75rem;
     }
 
+    .queue-title-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
     .queue-title {
       font-size: clamp(1.05rem, 1.4vw, 1.3rem);
       font-weight: 700;
       color: var(--text-primary);
       letter-spacing: 0.02em;
+    }
+
+    .settings-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      background: transparent;
+      color: var(--text-primary);
+      padding: 0;
+      min-width: 0;
+      min-height: 0;
+      cursor: pointer;
+      transition: color 140ms ease, transform 120ms ease, filter 160ms ease;
+    }
+
+    .settings-button:hover {
+      color: var(--accent);
+      filter: drop-shadow(0 0 8px rgba(248, 212, 119, 0.35));
+    }
+
+    .settings-button:active {
+      transform: scale(0.95);
+    }
+
+    .settings-button svg {
+      width: 22px;
+      height: 22px;
+      display: block;
+      fill: currentColor;
     }
 
     .queue-item {
@@ -1176,7 +1426,31 @@
   <main class="shell">
     <section class="panel queue-panel">
       <div class="queue-header">
-        <h2 class="queue-title">Spotlight</h2>
+        <div class="queue-title-group">
+          <h2 class="queue-title">Spotlight</h2>
+          <button
+            type="button"
+            class="settings-button"
+            id="settings-trigger"
+            aria-label="Settings"
+            data-i18n="settings.trigger"
+            data-i18n-attr="aria-label"
+            aria-haspopup="dialog"
+            aria-expanded="false"
+            aria-controls="settings-overlay"
+            title="Open settings"
+            data-i18n-attr="title"
+            data-i18n="settings.triggerTooltip"
+          >
+            <svg viewBox="0 0 512 512" aria-hidden="true" focusable="false">
+              <path
+                fill="currentColor"
+                d="M497.569 215.166l-55.345-13.064c-4.032-13.946-9.495-27.27-16.376-39.732l29.85-48.303c4.57-7.397 3.452-16.946-2.688-23.086l-31.99-31.99c-6.129-6.129-15.678-7.248-23.076-2.678l-48.292 29.851c-12.462-6.882-25.785-12.344-39.732-16.377L280.856 5.978C278.856 5.978 271.306 0 262.63 0h-13.26c-8.678 0-16.227 5.978-18.227 14.419l-13.064 55.368c-13.946 4.032-27.27 9.484-39.732 16.377l-48.303-29.872c-7.387-4.549-16.946-3.441-23.086 2.699L58.99 90.97c-6.13 6.14-7.248 15.709-2.689 23.087l29.862 48.313c-6.882 12.462-12.344 25.786-16.367 39.721l-55.378 13.065C5.978 217.165 0 224.704 0 233.392v45.226c0 8.678 5.978 16.237 14.419 18.226l55.378 13.065c4.032 13.946 9.485 27.259 16.367 39.71l-29.872 48.324c-4.549 7.398-3.441 16.957 2.699 23.098l31.979 31.979c6.14 6.14 15.709 7.257 23.087 2.688l48.323-29.872c12.463 6.882 25.786 12.344 39.722 16.366l13.064 55.366c2 8.463 9.549 14.431 18.227 14.431h45.237c8.677 0 16.226-5.968 18.226-14.431l13.064-55.366c13.937-4.021 27.259-9.484 39.712-16.366l48.312 29.861c7.398 4.57 16.947 3.452 23.087-2.688l31.989-31.99c6.13-6.129 7.248-15.688 2.678-23.087l-29.861-48.302c6.893-12.452 12.345-25.774 16.377-39.721l55.366-13.065c8.463-2.001 14.42-9.539 14.42-18.226v-45.238c0-8.44-5.968-15.989-14.431-17.988zM256.006 303.103c-26.002 0-47.098-21.097-47.098-47.108s21.097-47.108 47.098-47.108c26.011 0 47.108 21.097 47.108 47.108s-21.097 47.108-47.108 47.108z"
+              />
+            </svg>
+
+          </button>
+        </div>
       </div>
       <ol id="spotlight-queue" class="queue-list" aria-live="polite" aria-label="Highlighted messages"></ol>
     </section>
@@ -1188,22 +1462,30 @@
       <ul id="chat-stream" aria-live="polite" aria-label="Twitch chat messages"></ul>
       <form id="custom-message-form" class="custom-form" autocomplete="off">
           <span class="custom-resize" aria-hidden="true"></span>
-          <button id="compose-toggle" class="compose-toggle" type="button" aria-expanded="false">Nachricht verfassen</button>
+          <button
+            id="compose-toggle"
+            class="compose-toggle"
+            type="button"
+            aria-expanded="false"
+            data-i18n="compose.open"
+          >
+            Compose message
+          </button>
           <div class="input-stack" data-open="false">
           <div class="compose-bar">
-            <button type="button" class="compose-close" aria-label="Eingabefeld schließen" title="Eingabefeld schließen">
+            <button type="button" class="compose-close" data-i18n="compose.close" data-i18n-attr="aria-label" title="Close composer">
               <svg viewBox="0 0 18 18" aria-hidden="true" focusable="false">
                 <path d="M4 7l5 5 5-5" />
               </svg>
             </button>
             <div class="role-toggle" role="group" aria-label="Sender identity">
               <label class="role-option role-option--active">
-                <input type="radio" name="custom-role" value="Zuschauer" checked />
-                Zuschauer
+                <input type="radio" name="custom-role" value="viewer" checked />
+                <span data-i18n="role.viewer">Viewer</span>
               </label>
               <label class="role-option">
-                <input type="radio" name="custom-role" value="Intern" />
-                Intern
+                <input type="radio" name="custom-role" value="internal" />
+                <span data-i18n="role.internal">Internal</span>
               </label>
             </div>
           </div>
@@ -1212,18 +1494,20 @@
               id="custom-text"
               class="custom-textarea"
               name="text"
-              placeholder="Schreibe eine Nachricht"
+              placeholder="Write a message"
+              data-i18n="message.placeholder"
+              data-i18n-attr="placeholder"
               maxlength="500"
               required
             ></textarea>
             <div class="custom-actions">
-              <button class="custom-paste" type="button" aria-label="Aus Zwischenablage einfügen">
+              <button class="custom-paste" type="button" data-i18n="actions.paste" data-i18n-attr="aria-label">
                 <svg viewBox="0 0 18 18" aria-hidden="true" focusable="false">
                   <path d="M6 3h6l1 2h-8l1-2z" />
                   <path d="M5 5h8v10H5z" />
                 </svg>
               </button>
-              <button class="custom-submit" type="submit" aria-label="Nachricht senden">
+              <button class="custom-submit" type="submit" data-i18n="actions.send" data-i18n-attr="aria-label">
                 <svg viewBox="0 0 18 18" aria-hidden="true" focusable="false">
                   <path d="M3 9h12M9 3l6 6-6 6" />
                 </svg>
@@ -1275,19 +1559,71 @@
 
   <div id="auth-overlay" class="auth-overlay" role="dialog" aria-modal="true" aria-labelledby="auth-title">
     <div class="auth-card">
-      <div class="auth-title" id="auth-title">Moderatorzugang erforderlich</div>
-      <p class="auth-subtitle">Gib das Passwort ein, um Nachrichten zu spotlighten, zu pinnen oder zu senden.</p>
+      <div class="auth-title" id="auth-title" data-i18n="auth.title">Moderator access required</div>
+      <p class="auth-subtitle" data-i18n="auth.subtitle">Enter the password to spotlight, pin, or send messages.</p>
       <form id="auth-form" class="auth-form" autocomplete="off">
         <div class="auth-field">
-          <label for="auth-password">Passwort</label>
+          <label for="auth-password" data-i18n="auth.password">Password</label>
           <input id="auth-password" class="auth-input" type="password" name="password" required />
         </div>
         <div id="auth-error" class="auth-error" role="status" aria-live="polite"></div>
         <div class="auth-actions">
-          <button type="button" class="btn-secondary" id="auth-cancel">Abbrechen</button>
-          <button type="submit" class="btn-primary">Entsperren</button>
+          <button type="button" class="btn-secondary" id="auth-cancel" data-i18n="auth.cancel">Cancel</button>
+          <button type="submit" class="btn-primary" data-i18n="auth.unlock">Unlock</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <div
+    id="settings-overlay"
+    class="settings-overlay"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="settings-title"
+  >
+    <div class="settings-card" role="document">
+      <div class="settings-head">
+        <div>
+          <div class="settings-title" id="settings-title" data-i18n="settings.title">Settings</div>
+          <div class="settings-subtitle" data-i18n="settings.subtitle">Manage language and preferences.</div>
+        </div>
+        <button
+          type="button"
+          class="settings-close"
+          id="settings-close"
+          data-i18n="settings.close"
+          data-i18n-attr="aria-label"
+          aria-label="Close settings"
+        >
+          <svg viewBox="0 0 18 18" aria-hidden="true" focusable="false">
+            <path d="M4.5 4.5l9 9m0-9-9 9" />
+          </svg>
+        </button>
+      </div>
+      <div class="settings-list">
+        <div class="setting-row">
+          <div>
+            <div class="setting-label" data-i18n="settings.language.label">Language</div>
+            <div class="setting-hint" data-i18n="settings.language.hint">Choose UI language (default: German).</div>
+          </div>
+          <div class="language-picker" id="language-picker">
+            <button
+              type="button"
+              class="settings-select"
+              id="language-toggle"
+              aria-haspopup="listbox"
+              aria-expanded="false"
+            >
+              <span id="language-label">German</span>
+            </button>
+            <div class="language-menu" id="language-menu" role="listbox">
+              <button class="language-option" role="option" data-lang="de" aria-current="true" data-i18n="lang.option.de">German</button>
+              <button class="language-option" role="option" data-lang="en" data-i18n="lang.option.en">English</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1295,9 +1631,9 @@
     <div class="confirm-card">
       <div class="confirm-meta">
         <span id="confirm-role" aria-live="polite"></span>
-        <span class="confirm-hint">Enter to send, Esc to cancel</span>
+        <span class="confirm-hint" data-i18n="confirm.hint">Enter to send, Esc to cancel</span>
       </div>
-      <div class="confirm-title" id="confirm-title">Nachricht senden?</div>
+      <div class="confirm-title" id="confirm-title" data-i18n="confirm.title">Send message?</div>
       <div class="confirm-preview" id="confirm-text"></div>
       <div class="confirm-actions">
         <button type="button" class="toggle-pill" id="confirm-spotlight" aria-pressed="true">Spotlight</button>
@@ -1306,7 +1642,9 @@
           class="toggle-pill toggle-pill--twitch"
           id="confirm-twitch"
           aria-pressed="false"
-          aria-label="Nachricht auch in Twitch senden"
+          aria-label="Also send to Twitch"
+          data-i18n="actions.twitch"
+          data-i18n-attr="aria-label"
           title=""
         >
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -1314,8 +1652,8 @@
           </svg>
           <span class="sr-only">Twitch</span>
         </button>
-        <button type="button" class="btn-secondary" id="confirm-cancel">Abbrechen</button>
-        <button type="button" class="btn-primary" id="confirm-send">Senden</button>
+        <button type="button" class="btn-secondary" id="confirm-cancel" data-i18n="confirm.cancel">Cancel</button>
+        <button type="button" class="btn-primary" id="confirm-send" data-i18n="confirm.send">Send</button>
       </div>
     </div>
   </div>
@@ -1347,6 +1685,13 @@
     const authInput = document.querySelector('#auth-password');
     const authError = document.querySelector('#auth-error');
     const authCancel = document.querySelector('#auth-cancel');
+    const settingsTrigger = document.querySelector('#settings-trigger');
+    const settingsOverlay = document.querySelector('#settings-overlay');
+    const settingsClose = document.querySelector('#settings-close');
+    const languageToggle = document.querySelector('#language-toggle');
+    const languageMenu = document.querySelector('#language-menu');
+    const languageOptions = Array.from(document.querySelectorAll('.language-option'));
+    const languageLabel = document.querySelector('#language-label');
 
     const baseUrl = new URL('.', window.location.href);
     const apiChannelUrl = new URL('api/channel', baseUrl);
@@ -1362,6 +1707,149 @@
     const RUMBLE_TTL_MS = 1800; // keep rumble intents alive across queue re-renders
     const SESSION_STORAGE_KEY = 'chatspotlight-session';
     const SESSION_HEADER = 'X-Session-Token';
+    const LANGUAGE_STORAGE_KEY = 'chatspotlight-lang';
+    const DEFAULT_LANG = 'de';
+
+    const translations = {
+      en: {
+        'compose.open': 'Compose message',
+        'compose.close': 'Close composer',
+        'role.viewer': 'Viewer',
+        'role.internal': 'Internal',
+        'message.placeholder': 'Write a message',
+        'actions.paste': 'Paste from clipboard',
+        'actions.send': 'Send message',
+        'actions.twitch': 'Also send to Twitch',
+        'auth.title': 'Moderator access required',
+        'auth.subtitle': 'Enter the password to spotlight, pin, or send messages.',
+        'auth.password': 'Password',
+        'auth.cancel': 'Cancel',
+        'auth.unlock': 'Unlock',
+        'auth.error': 'Wrong password. Please try again.',
+        'confirm.hint': 'Enter to send, Esc to cancel',
+        'confirm.title': 'Send message?',
+        'confirm.cancel': 'Cancel',
+        'confirm.send': 'Send',
+        'confirm.as': 'As:',
+        'settings.title': 'Settings',
+        'settings.subtitle': 'Manage language and preferences.',
+        'settings.language.label': 'Language',
+        'settings.language.hint': 'Choose UI language (default: German).',
+        'settings.close': 'Close settings',
+        'settings.trigger': 'Settings',
+        'settings.triggerTooltip': 'Open settings',
+        'lang.option.de': 'German',
+        'lang.option.en': 'English',
+        'twitch.tooltip.known': 'Send as {username}',
+        'twitch.tooltip.unknown': 'Twitch username unknown',
+        'twitch.tooltip.viewerOnly': 'Available only as "Viewer"',
+      },
+      de: {
+        'compose.open': 'Nachricht verfassen',
+        'compose.close': 'Eingabefeld schließen',
+        'role.viewer': 'Zuschauer',
+        'role.internal': 'Intern',
+        'message.placeholder': 'Schreibe eine Nachricht',
+        'actions.paste': 'Aus Zwischenablage einfügen',
+        'actions.send': 'Nachricht senden',
+        'actions.twitch': 'Auch an Twitch senden',
+        'auth.title': 'Moderatorzugang erforderlich',
+        'auth.subtitle': 'Gib das Passwort ein, um Nachrichten zu spotlighten, zu pinnen oder zu senden.',
+        'auth.password': 'Passwort',
+        'auth.cancel': 'Abbrechen',
+        'auth.unlock': 'Entsperren',
+        'auth.error': 'Falsches Passwort. Bitte erneut versuchen.',
+        'confirm.hint': 'Enter zum Senden, Esc zum Abbrechen',
+        'confirm.title': 'Nachricht senden?',
+        'confirm.cancel': 'Abbrechen',
+        'confirm.send': 'Senden',
+        'confirm.as': 'Als:',
+        'settings.title': 'Einstellungen',
+        'settings.subtitle': 'Sprache und Präferenzen verwalten.',
+        'settings.language.label': 'Sprache',
+        'settings.language.hint': 'UI-Sprache wählen (Standard: Deutsch).',
+        'settings.close': 'Einstellungen schließen',
+        'settings.trigger': 'Einstellungen',
+        'settings.triggerTooltip': 'Einstellungen öffnen',
+        'lang.option.de': 'Deutsch',
+        'lang.option.en': 'Englisch',
+        'twitch.tooltip.known': 'Als {username} senden',
+        'twitch.tooltip.unknown': 'Twitch-Benutzername unbekannt',
+        'twitch.tooltip.viewerOnly': 'Nur als "Zuschauer" verfügbar',
+      },
+    };
+
+    let currentLang = localStorage.getItem(LANGUAGE_STORAGE_KEY) || DEFAULT_LANG;
+
+    const t = (key, vars = {}) => {
+      const table = translations[currentLang] || translations.en || {};
+      const fallback = translations.en || {};
+      const template = table[key] ?? fallback[key] ?? key;
+      return template.replace(/\{(\w+)\}/g, (_, k) => (vars[k] !== undefined ? vars[k] : `{${k}}`));
+    };
+
+    const applyTranslations = () => {
+      document.querySelectorAll('[data-i18n]').forEach((el) => {
+        const key = el.dataset.i18n;
+        if (!key) return;
+        const attr = el.dataset.i18nAttr;
+        const value = t(key);
+        if (attr) {
+          el.setAttribute(attr, value);
+        } else {
+          el.textContent = value;
+        }
+      });
+      // Ensure the settings gear keeps both title and aria-label in sync even though a single data-i18n attr drives the mapping.
+      if (settingsTrigger) {
+        const tooltip = t('settings.triggerTooltip');
+        settingsTrigger.setAttribute('title', tooltip);
+        settingsTrigger.setAttribute('aria-label', tooltip);
+      }
+      // Align clipboard/send tooltips with the localized labels.
+      const pasteBtn = document.querySelector('.custom-paste');
+      if (pasteBtn) pasteBtn.setAttribute('title', t('actions.paste'));
+      const sendBtn = document.querySelector('.custom-submit');
+      if (sendBtn) sendBtn.setAttribute('title', t('actions.send'));
+      updateTwitchTooltip();
+      updateLanguageLabel();
+    };
+
+    const setLanguage = (lang) => {
+      const next = translations[lang] ? lang : 'en';
+      currentLang = next;
+      localStorage.setItem(LANGUAGE_STORAGE_KEY, currentLang);
+      applyTranslations();
+      updateLanguageLabel();
+      updateLanguageMenuState(false);
+    };
+
+    const getRoleLabel = (value) => {
+      const normalized = (value || '').toLowerCase();
+      if (normalized === 'viewer' || normalized === 'zuschauer') return t('role.viewer');
+      if (normalized === 'internal' || normalized === 'intern') return t('role.internal');
+      return value || '';
+    };
+
+    const updateLanguageLabel = () => {
+      if (languageLabel) languageLabel.textContent = t(`lang.option.${currentLang}`);
+      languageOptions.forEach((opt) => {
+        const lang = opt.dataset.lang;
+        opt.setAttribute('aria-current', lang === currentLang ? 'true' : 'false');
+      });
+      if (languageToggle) languageToggle.setAttribute('aria-expanded', languageMenu?.dataset.open === 'true' ? 'true' : 'false');
+    };
+
+    const updateLanguageMenuState = (open) => {
+      if (!languageMenu || !languageToggle) return;
+      if (open) {
+        languageMenu.setAttribute('data-open', 'true');
+        languageToggle.setAttribute('aria-expanded', 'true');
+      } else {
+        languageMenu.removeAttribute('data-open');
+        languageToggle.setAttribute('aria-expanded', 'false');
+      }
+    };
 
     const messageStore = new Map();
     const state = {
@@ -1430,6 +1918,19 @@
       openAuthModal(action);
     };
 
+    const closeSettings = () => {
+      if (!settingsOverlay) return;
+      settingsOverlay.removeAttribute('data-open');
+      if (settingsTrigger) settingsTrigger.setAttribute('aria-expanded', 'false');
+    };
+
+    const openSettings = () => {
+      if (!settingsOverlay) return;
+      settingsOverlay.setAttribute('data-open', 'true');
+      if (settingsTrigger) settingsTrigger.setAttribute('aria-expanded', 'true');
+      if (settingsClose) settingsClose.focus({ preventScroll: true });
+    };
+
     const updateTwitchToggle = (on, { suppressGuard = false } = {}) => {
       if (!suppressGuard && !twitchToggleEnabled) {
         pendingTwitch = false;
@@ -1442,7 +1943,8 @@
     };
 
     const enforceTwitchEligibility = (role) => {
-      const isViewer = (role || '').toLowerCase() === 'zuschauer';
+      const normalized = (role || '').toLowerCase();
+      const isViewer = normalized === 'viewer' || normalized === 'zuschauer';
       twitchToggleEnabled = isViewer;
       if (!isViewer) pendingTwitch = false;
       if (confirmTwitchBtn) {
@@ -1450,21 +1952,21 @@
         confirmTwitchBtn.setAttribute('aria-disabled', isViewer ? 'false' : 'true');
         updateTwitchToggle(isViewer ? pendingTwitch : false, { suppressGuard: true });
         confirmTwitchBtn.title = isViewer
-          ? (twitchUsername ? `Als ${twitchUsername} senden` : 'Als Twitch senden')
-          : 'Nur als "Zuschauer" verfügbar';
+          ? (twitchUsername ? t('twitch.tooltip.known', { username: twitchUsername }) : t('twitch.tooltip.unknown'))
+          : t('twitch.tooltip.viewerOnly');
       }
     };
 
     const updateTwitchTooltip = () => {
       if (!confirmTwitchBtn) return;
       if (twitchUsername) {
-        confirmTwitchBtn.title = `Als ${twitchUsername} senden`;
+        confirmTwitchBtn.title = t('twitch.tooltip.known', { username: twitchUsername });
       } else {
-        confirmTwitchBtn.title = 'Twitch-Benutzername unbekannt';
+        confirmTwitchBtn.title = t('twitch.tooltip.unknown');
       }
     };
 
-    updateTwitchTooltip();
+    setLanguage(currentLang);
     primeEmptyQueue();
     loadChannelName();
 
@@ -1539,7 +2041,7 @@
           pendingAuthAction = null;
           if (typeof action === 'function') action();
         } catch (err) {
-          if (authError) authError.textContent = 'Falsches Passwort. Bitte erneut versuchen.';
+          if (authError) authError.textContent = t('auth.error');
           console.warn('Authentication failed', err);
         }
       });
@@ -1561,6 +2063,62 @@
         if (evt.key === 'Escape') {
           evt.preventDefault();
           closeAuthModal();
+        }
+      });
+    }
+
+    if (settingsTrigger) {
+      settingsTrigger.addEventListener('click', (evt) => {
+        evt.preventDefault();
+        openSettings();
+      });
+    }
+
+    if (settingsClose) {
+      settingsClose.addEventListener('click', (evt) => {
+        evt.preventDefault();
+        closeSettings();
+      });
+    }
+
+    if (languageToggle && languageMenu) {
+      languageToggle.addEventListener('click', (evt) => {
+        evt.preventDefault();
+        const open = languageMenu.getAttribute('data-open') === 'true';
+        updateLanguageMenuState(!open);
+      });
+
+      languageOptions.forEach((opt) => {
+        opt.addEventListener('click', (evt) => {
+          evt.preventDefault();
+          const lang = opt.dataset.lang;
+          if (lang) setLanguage(lang);
+        });
+      });
+
+      document.addEventListener('click', (evt) => {
+        if (!languageMenu || !languageToggle) return;
+        const target = evt.target;
+        if (languageMenu.contains(target) || languageToggle.contains(target)) return;
+        updateLanguageMenuState(false);
+      });
+
+      document.addEventListener('keydown', (evt) => {
+        if (evt.key === 'Escape') {
+          updateLanguageMenuState(false);
+        }
+      });
+    }
+
+    if (settingsOverlay) {
+      settingsOverlay.addEventListener('click', (evt) => {
+        if (evt.target === settingsOverlay) closeSettings();
+      });
+      document.addEventListener('keydown', (evt) => {
+        if (settingsOverlay.getAttribute('data-open') !== 'true') return;
+        if (evt.key === 'Escape') {
+          evt.preventDefault();
+          closeSettings();
         }
       });
     }
@@ -2152,7 +2710,8 @@
         if (!confirmOverlay || !confirmText || !confirmRole) return false;
         enforceTwitchEligibility(user);
         confirmText.textContent = text;
-        confirmRole.textContent = `Als: ${user}`;
+        const roleLabel = getRoleLabel(user);
+        confirmRole.textContent = `${t('confirm.as')} ${roleLabel}`;
         confirmOverlay.setAttribute('data-open', 'true');
         pendingMessage = { text, user };
         pendingSpotlight = true;
