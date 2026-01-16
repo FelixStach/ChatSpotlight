@@ -1,38 +1,60 @@
 # Twitch Chat Helper
 
-A minimal FastAPI + WebSocket service that streams a Twitch chat into a shared spotlight-friendly viewer. Every connected browser receives the same updates in real time, and any viewer can enlarge a message to share it with an audience, stage crew, or caster desk.
+A FastAPI + WebSocket service that ingests a Twitch channel and drives a shared, show-friendly spotlight queue. Moderators can pin, rumble, and curate custom messages; the audience sees a synchronized spotlight across every connected browser.
 
 ## Demo
 ![Spotlight chat demo preview](preview.jpg)
 
 ## Features
-- Live ingestion of a Twitch channel via the IRC gateway.
-- WebSocket fan-out so every connected client stays in sync.
-- Click-to-highlight overlay with a dismiss button on the top-right corner.
-- Lightweight fake message generator (`FAKE_CHAT_MODE=1`) for local demos when Twitch credentials are unavailable.
+- Twitch IRC ingestion with emote rendering, short rolling history, and a capped outbound command queue so custom messages can also be sent to Twitch chat.
+- Moderator-gated controls (highlight, clear, pin/unpin, rumble, custom send) using a session cookie plus `X-Session-Token` header; the password is stored in [app/config/password.txt](app/config/password.txt).
+- Spotlight queue with three slots, pinning, rumble alerts, and visual states for highlighted or custom-sent messages.
+- In-browser composer (German copy) with role presets (“Zuschauer”, “Intern”), clipboard paste, and a confirmation modal that can optionally spotlight and/or post to Twitch.
+- Mobile-friendly, responsive UI with auto-scroll, long-message compaction, and reconnect handling.
+- Fake chat generator switch for offline demos.
 
-## Setup
+## Quick Start
 1. **Python environment**
    ```bash
    python -m venv .venv
-   source .venv/bin/activate
+   .\.venv\Scripts\activate    # Windows
    pip install -r requirements.txt
    ```
 
-2. **Run the server**
+2. **Configure Twitch + password**
+   - Copy the examples in `app/config/` to the real files and fill them in:
+     - [app/config/username.txt](app/config/username.txt) — bot username
+     - [app/config/oauth_token.txt](app/config/oauth_token.txt) — OAuth token (with or without the `oauth:` prefix)
+     - [app/config/channel.txt](app/config/channel.txt) — channel to join
+     - [app/config/password.txt](app/config/password.txt) — moderator password for protected actions
+   - Optional: set `USE_FAKE_STREAM = True` in [app/main.py](app/main.py) to demo without Twitch.
+
+3. **Run the server**
    ```bash
    uvicorn app.main:app --reload
    ```
 
-3. **Open the UI**
-   Visit http://localhost:8000/ and keep the page open. Multiple viewers can connect; everyone receives identical updates.
+4. **Open the UI**
+   Visit http://localhost:8000/ in one or more browsers. Everyone shares the same spotlight state.
+
+## Using the UI
+- Click any chat message to spotlight it. Click it again (from the queue) to clear, or use the “Pin/Unpin” controls per slot.
+- “~” triggers a rumble animation on a slot; the action also broadcasts to other viewers.
+- The composer opens via “Nachricht verfassen”; submit with Enter. A confirmation modal lets you toggle Spotlight and Twitch posting (Twitch is available for the “Zuschauer” role and uses the bot account).
+- Moderator actions prompt for the password once per browser session; a session cookie plus `X-Session-Token` keep it active for 12h.
+- Emotes render inline in chat and spotlight. Long texts auto-compact; chat auto-scrolls unless you scroll up.
+
+## API / Endpoints
+- WebSocket: `/ws/chat` (also under the optional `PATH_PREFIX` if configured). Sends history, live chat, highlight queue, and rumble events.
+- REST: `/api/channel` (channel + bot name), `/api/session` (POST password → session token cookie), `/api/custom-message` (POST text/user with optional `spotlight` and `twitch` booleans; requires auth).
+
+## Configuration Notes (edit [app/main.py](app/main.py))
+- `HISTORY_LIMIT` (chat history fan-out), `TOTAL_QUEUE_SLOTS` (spotlight slots), `IRC_MESSAGE_LIMIT` (outbound Twitch length guard).
+- `SESSION_TTL_SECONDS`, `SESSION_COOKIE`, `SESSION_HEADER`, `SECURE_COOKIES` (auth session handling).
+- `PATH_PREFIX` to serve behind a subdirectory; static and WebSocket routes mirror the prefix automatically.
+- `USE_FAKE_STREAM`, `FAKE_CHANNEL_NAME` for offline demos.
 
 ## How It Works
-- A background task either connects to Twitch IRC (`irc.chat.twitch.tv:6697`) or emits fake messages. Parsed chat lines are transformed into JSON payloads stored in a short rolling history.
-- Each WebSocket connection immediately receives the history, then every new message broadcast.
-- The frontend (`app/static`) consumes the socket, renders the feed, and handles the focus overlay UI.
-
-## Customization Ideas
-- Increase `HISTORY_LIMIT` in `app/main.py` if you need more scrollback.
-- Extend the frontend to flag messages, add keyboard shortcuts, or drive on-stream graphics.
-- Swap the fake generator for a REST endpoint if you want producers to push curated lines manually.
+- On startup, Twitch IRC connects and streams messages (or the fake generator runs). Parsed lines become JSON payloads stored in a deque-backed history and lookup map.
+- New WebSocket clients immediately receive chat history plus the current highlight queue; further changes broadcast in real time.
+- The frontend in [app/static/index.html](app/static/index.html) manages the queue UI, composer, auth modal, rumble, and emote-aware rendering.
