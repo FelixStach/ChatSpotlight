@@ -2,6 +2,9 @@
 
 A minimal FastAPI + WebSocket service that streams a Twitch chat into a shared spotlight-friendly viewer. Every connected browser receives the same updates in real time, and any viewer can enlarge a message to share it with an audience, stage crew, or caster desk.
 
+## Demo
+![Spotlight chat demo preview](preview.jpg)
+
 ## Features
 - Live ingestion of a Twitch channel via the IRC gateway.
 - WebSocket fan-out so every connected client stays in sync.
