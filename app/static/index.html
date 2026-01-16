@@ -865,6 +865,31 @@
       transform: translateY(1px);
     }
 
+    #clear-cookies {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.55rem 0.8rem;
+      gap: 0.35rem;
+      line-height: 1;
+    }
+
+    #clear-cookies svg {
+      display: block;
+      width: 18px;
+      height: 18px;
+    }
+
+    .setting-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-weight: 700;
+      color: #f28b82;
+      opacity: 0;
+      transition: opacity 160ms ease;
+    }
+
     .btn-primary {
       border-color: rgba(88, 221, 161, 0.5);
       background: linear-gradient(135deg, rgba(88, 221, 161, 0.2), rgba(40, 70, 58, 0.6));
@@ -1678,6 +1703,33 @@
             </svg>
           </button>
         </div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label" data-i18n="settings.cookies.label">Cookies</div>
+            <div class="setting-hint" data-i18n="settings.cookies.hint">Delete all cookies stored by this app.</div>
+          </div>
+          <button
+            type="button"
+            class="btn-secondary"
+            id="clear-cookies"
+            data-i18n="settings.cookies.clear"
+            data-i18n-attr="aria-label"
+            aria-label="Delete cookies"
+          >
+            <svg
+              viewBox="0 0 110 140"
+              width="20"
+              height="20"
+              aria-hidden="true"
+              focusable="false"
+              fill="#e05656"
+            >
+              <path d="M77.4,49.1h-5.94v56.09h5.94V49.1L77.4,49.1L77.4,49.1z M6.06,9.06h32.16V6.2c0-0.1,0-0.19,0.01-0.29 c0.13-2.85,2.22-5.25,5.01-5.79C43.97-0.02,44.64,0,45.38,0H63.9c0.25,0,0.49-0.01,0.73,0.02c1.58,0.08,3.02,0.76,4.06,1.81 c1.03,1.03,1.69,2.43,1.79,3.98c0.01,0.18,0.02,0.37,0.02,0.55v2.7H103c0.44,0,0.75,0.01,1.19,0.08c2.21,0.36,3.88,2.13,4.07,4.37 c0.02,0.24,0.03,0.47,0.03,0.71v10.54c0,1.47-1.19,2.66-2.67,2.66H2.67C1.19,27.43,0,26.23,0,24.76V24.7v-9.91 C0,10.64,2.04,9.06,6.06,9.06L6.06,9.06z M58.07,49.1h-5.95v56.09h5.95V49.1L58.07,49.1L58.07,49.1z M38.74,49.1H32.8v56.09h5.95 V49.1L38.74,49.1L38.74,49.1z M10.74,31.57h87.09c0.36,0.02,0.66,0.04,1.03,0.1c1.25,0.21,2.4,0.81,3.27,1.66 c1.01,1,1.67,2.34,1.7,3.83c0,0.31-0.03,0.63-0.06,0.95l-7.33,78.66c-0.1,1.03-0.27,1.95-0.79,2.92c-1.01,1.88-2.88,3.19-5.2,3.19 H18.4c-0.55,0-1.05,0-1.59-0.08c-0.22-0.03-0.43-0.08-0.64-0.14c-0.31-0.09-0.62-0.21-0.91-0.35c-0.27-0.13-0.52-0.27-0.78-0.45 c-1.51-1.04-2.51-2.78-2.69-4.72L4.5,37.88c-0.02-0.25-0.04-0.52-0.04-0.77c0.05-1.48,0.7-2.8,1.7-3.79 c0.88-0.86,2.06-1.47,3.33-1.67C9.9,31.59,10.34,31.57,10.74,31.57L10.74,31.57z M97.75,36.9H10.6c-0.57,0-0.84,0.1-0.79,0.7 l7.27,79.05h0l0,0.01c0.03,0.38,0.2,0.69,0.45,0.83l0,0l0.08,0.03l0.06,0.01l0.08,0h72.69c0.6,0,0.67-0.84,0.71-1.28l7.34-78.71 C98.53,37.04,98.23,36.9,97.75,36.9L97.75,36.9z"/>
+            </svg>
+            <span class="sr-only" data-i18n="settings.cookies.clear">Delete cookies</span>
+            <span id="clear-cookies-status" class="setting-status" aria-live="polite"></span>
+          </button>
+        </div>
       </div>
       <div class="settings-footer">
         <a
@@ -1761,6 +1813,9 @@
     const settingsOverlay = document.querySelector('#settings-overlay');
     const settingsClose = document.querySelector('#settings-close');
     const downloadLogBtn = document.querySelector('#download-log');
+    const clearCookiesBtn = document.querySelector('#clear-cookies');
+    const clearCookiesLabel = clearCookiesBtn?.querySelector('.sr-only') || null;
+    const clearCookiesStatus = document.querySelector('#clear-cookies-status');
     const languageToggle = document.querySelector('#language-toggle');
     const languageMenu = document.querySelector('#language-menu');
     const languageOptions = Array.from(document.querySelectorAll('.language-option'));
@@ -1778,6 +1833,7 @@
     const MAX_CHAT_MESSAGES = 100;
     const LONG_QUEUE_TEXT_THRESHOLD = 140;
     const RUMBLE_TTL_MS = 1800; // keep rumble intents alive across queue re-renders
+    const COOKIE_RESET_DELAY_MS = 2000;
     const SESSION_STORAGE_KEY = 'chatspotlight-session';
     const SESSION_HEADER = 'X-Session-Token';
     const LANGUAGE_STORAGE_KEY = 'chatspotlight-lang';
@@ -1814,6 +1870,11 @@
         'settings.log.label': 'Chat log',
         'settings.log.hint': 'Download all messages since server start.',
         'settings.log.download': 'Download log',
+        'settings.cookies.label': 'Cookies',
+        'settings.cookies.hint': 'Delete all cookies stored by this app.',
+        'settings.cookies.clear': 'Delete cookies',
+        'settings.cookies.cleared': 'Cookies cleared',
+        'settings.cookies.error': 'Unable to delete cookies',
         'settings.github.link': 'View project on GitHub',
         'lang.option.de': 'German',
         'lang.option.en': 'English',
@@ -1851,6 +1912,11 @@
         'settings.log.label': 'Chat-Log',
         'settings.log.hint': 'Alle Nachrichten seit Serverstart herunterladen.',
         'settings.log.download': 'Log herunterladen',
+        'settings.cookies.label': 'Cookies',
+        'settings.cookies.hint': 'Alle von dieser App gespeicherten Cookies löschen.',
+        'settings.cookies.clear': 'Cookies löschen',
+        'settings.cookies.cleared': 'Cookies gelöscht',
+        'settings.cookies.error': 'Cookies konnten nicht gelöscht werden',
         'settings.github.link': 'Projekt auf GitHub ansehen',
         'lang.option.de': 'Deutsch',
         'lang.option.en': 'Englisch',
@@ -2070,6 +2136,67 @@
       }
     };
 
+    const clearAllCookies = () => {
+      const cookies = document.cookie ? document.cookie.split(';') : [];
+      const expires = 'Thu, 01 Jan 1970 00:00:00 GMT';
+      const paths = ['/', window.location.pathname || '/'];
+      const hostParts = window.location.hostname.split('.').filter(Boolean);
+      const domains = [];
+
+      for (let i = 0; i < hostParts.length; i += 1) {
+        const suffix = hostParts.slice(i).join('.');
+        if (suffix) domains.push(`.${suffix}`);
+      }
+
+      cookies.forEach((cookie) => {
+        const eqIndex = cookie.indexOf('=');
+        const name = (eqIndex >= 0 ? cookie.slice(0, eqIndex) : cookie).trim();
+        if (!name) return;
+        paths.forEach((path) => {
+          document.cookie = `${name}=;expires=${expires};path=${path}`;
+          domains.forEach((domain) => {
+            document.cookie = `${name}=;expires=${expires};path=${path};domain=${domain}`;
+          });
+        });
+      });
+    };
+
+    const flashCookieState = (key, delay = COOKIE_RESET_DELAY_MS) => {
+      if (!clearCookiesBtn) return;
+      clearCookiesBtn.disabled = true;
+      const label = t(key);
+      if (clearCookiesLabel) clearCookiesLabel.textContent = label;
+      clearCookiesBtn.setAttribute('aria-label', label);
+      clearCookiesBtn.setAttribute('title', label);
+      if (clearCookiesStatus) {
+        clearCookiesStatus.textContent = label;
+        clearCookiesStatus.style.opacity = '1';
+        clearCookiesStatus.style.color = key === 'settings.cookies.cleared' ? '#7bd88f' : '#f28b82';
+      }
+      setTimeout(() => {
+        const resetLabel = t('settings.cookies.clear');
+        if (clearCookiesLabel) clearCookiesLabel.textContent = resetLabel;
+        clearCookiesBtn.setAttribute('aria-label', resetLabel);
+        clearCookiesBtn.setAttribute('title', resetLabel);
+        clearCookiesBtn.disabled = false;
+        if (clearCookiesStatus) {
+          clearCookiesStatus.style.opacity = '0';
+          clearCookiesStatus.textContent = '';
+        }
+      }, delay);
+    };
+
+    const handleClearCookies = () => {
+      try {
+        clearAllCookies();
+        setAuthToken(null); // also drop any in-memory/session-stored moderator token
+        flashCookieState('settings.cookies.cleared');
+      } catch (err) {
+        console.error('Failed to clear cookies', err);
+        flashCookieState('settings.cookies.error');
+      }
+    };
+
     setLanguage(currentLang);
     primeEmptyQueue();
     loadChannelName();
@@ -2099,8 +2226,15 @@
     });
 
     socket.addEventListener('close', () => {
+      // Invalidate the session token on disconnect so a server restart forces re-auth.
+      setAuthToken(null);
       console.warn('Disconnected from server. Retrying in 5s...');
       setTimeout(() => window.location.reload(), 5000);
+    });
+
+    socket.addEventListener('error', () => {
+      // Be defensive: clear token on socket errors as well.
+      setAuthToken(null);
     });
 
     setInterval(() => {
@@ -2926,6 +3060,13 @@
             downloadChatLog();
           });
         }
+      }
+
+      if (clearCookiesBtn) {
+        clearCookiesBtn.addEventListener('click', (evt) => {
+          evt.preventDefault();
+          handleClearCookies();
+        });
       }
 
       const pasteButton = document.querySelector('.custom-paste');
