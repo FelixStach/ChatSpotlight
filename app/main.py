@@ -26,6 +26,8 @@ USERNAME_FILE = CONFIG_DIR / "username.txt"
 CHANNEL_FILE = CONFIG_DIR / "channel.txt"
 TOKEN_FILE = CONFIG_DIR / "oauth_token.txt"
 PASSWORD_FILE = CONFIG_DIR / "password.txt"
+LOG_DIR = BASE_DIR / "logs"
+CHAT_LOG_FILE = LOG_DIR / "chat.log"
 
 # Twitch / chat settings
 IRC_HOST = "irc.chat.twitch.tv"
@@ -55,6 +57,8 @@ highlight_queue: List[Dict[str, Any]] = []
 active_sessions: Dict[str, float] = {}
 ADMIN_PASSWORD: Optional[str] = None
 twitch_send_queue: Optional[asyncio.Queue[str]] = None
+logged_ids: Deque[str] = deque(maxlen=5000)
+logged_id_set: Set[str] = set()
 
 
 def required_file(path: Path, label: str) -> str:
@@ -190,6 +194,35 @@ def build_message_payload(user: str, text: str, emotes: Optional[List[Dict[str, 
     }
 
 
+def append_chat_log(payload: Dict[str, Any]) -> None:
+    raw_ts = payload.get("timestamp") or datetime.now(timezone.utc).isoformat()
+    try:
+        dt = datetime.fromisoformat(raw_ts)
+    except ValueError:
+        dt = datetime.now(timezone.utc)
+    dt = dt.astimezone(timezone.utc)
+    time_str = dt.strftime("%H:%M:%S")
+    msg_id = str(payload.get("id") or "")
+    if msg_id:
+        if msg_id in logged_id_set:
+            return
+        if len(logged_ids) == logged_ids.maxlen:
+            old_id = logged_ids.popleft()
+            logged_id_set.discard(old_id)
+        logged_ids.append(msg_id)
+        logged_id_set.add(msg_id)
+    user = str(payload.get("user") or "").strip() or "unknown"
+    text = str(payload.get("text") or "").replace("\n", " ").replace("\r", " ").strip()
+    flag = "[custom] " if payload.get("custom") else ""
+    line = f"{time_str} {flag}{user}: {text}\n"
+    try:
+        LOG_DIR.mkdir(parents=True, exist_ok=True)
+        with CHAT_LOG_FILE.open("a", encoding="utf-8") as fh:
+            fh.write(line)
+    except Exception as err:  # pragma: no cover - log best-effort
+        logging.warning("Failed to append chat log: %s", err)
+
+
 def remember_message(payload: Dict[str, Any]) -> None:
     evicted: Optional[Dict[str, Any]] = None
     if recent_messages.maxlen and len(recent_messages) == recent_messages.maxlen:
@@ -203,6 +236,7 @@ def remember_message(payload: Dict[str, Any]) -> None:
             if not any(entry.get("id") == evicted_id for entry in highlight_queue):
                 message_lookup.pop(evicted_id, None)
     message_lookup[payload["id"]] = payload
+    append_chat_log(payload)
 
 
 def _ensure_twitch_queue() -> asyncio.Queue[str]:
@@ -628,6 +662,8 @@ async def fake_chat_loop() -> None:
 @app.on_event("startup")
 async def startup_event() -> None:
     global CHANNEL_NAME
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    date_header = datetime.now(timezone.utc).date().isoformat()
     load_admin_password()
     if USE_FAKE_STREAM:
         app.state.chat_task = asyncio.create_task(fake_chat_loop())
@@ -642,6 +678,8 @@ async def startup_event() -> None:
         app.state.chat_task = asyncio.create_task(twitch_chat_loop(username, token, channel))
         mode = "twitch"
     app.state.channel_name = CHANNEL_NAME
+    channel_label = CHANNEL_NAME or "unknown"
+    CHAT_LOG_FILE.write_text(f"Channel: {channel_label}\nDate: {date_header}\n\n", encoding="utf-8")
     logging.info("Chat stream started in %s mode", mode)
 
 
@@ -653,6 +691,13 @@ async def shutdown_event() -> None:
         await task
     except asyncio.CancelledError:
         pass
+
+
+@app.get("/api/chat-log")
+async def download_chat_log() -> FileResponse:
+    if not CHAT_LOG_FILE.exists():
+        raise HTTPException(status_code=404, detail="Log not found")
+    return FileResponse(CHAT_LOG_FILE, media_type="text/plain", filename="chat-log.txt")
 
 
 @app.get("/api/channel")

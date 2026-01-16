@@ -11,3 +11,7 @@ __pycache__/
 
 # Nohup output
 nohup.out
+
+# Logs
+logs/
+
