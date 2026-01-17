@@ -4,11 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Chat Spotlight Overlay</title>
-
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Audiowide&family=Press+Start+2P&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
-
   <style>
     :root {
       --bg: #03050d;
@@ -36,7 +34,7 @@
       background: transparent;
       overflow: hidden;
       color: var(--text);
-      font-family: 'Rajdhani', system-ui, sans-serif;
+      font-family: 'Rajdhani', 'Space Grotesk', system-ui, sans-serif;
     }
 
     body::before {
@@ -72,105 +70,120 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 0; /* fill entire horizontal space */
+      padding: clamp(0.5rem, 3vw, 2.5rem);
+      overflow: hidden;
     }
 
-    /* CARD — CONTENT DEFINES HEIGHT */
     .card {
-      width: 90%;
-      max-width: none;
-      margin: 0 auto; /* center and use 90% of available width */
-
-      background: linear-gradient(
-        145deg,
-        rgba(10, 13, 28, 0.92),
-        rgba(6, 8, 20, 0.9)
-      );
-
+      width: 92%;
+      max-width: 1180px;
+      min-height: 220px;
+      background: linear-gradient(145deg, rgba(10, 13, 28, 0.92), rgba(6, 8, 20, 0.9));
       border-radius: 24px;
-      border: 2px solid rgba(83, 240, 255, 0.44);
-
-      padding:
-        clamp(1.4rem, 2vw, 1.9rem)
-        clamp(1.35rem, 2.1vw, 1.85rem)
-        clamp(1.6rem, 2.4vw, 2.2rem);
-
+      border: 1px solid rgba(83, 240, 255, 0.28);
+      padding: clamp(1.35rem, 2.1vw, 1.85rem);
       display: flex;
       flex-direction: column;
       gap: 0.8rem;
-
       position: relative;
       overflow: hidden;
       isolation: isolate;
-
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      z-index: 1;
       box-shadow:
         0 18px 40px rgba(0, 0, 0, 0.55),
         0 0 45px rgba(83, 240, 255, 0.22),
         0 0 32px rgba(255, 59, 125, 0.18);
-
-      z-index: 1;
     }
 
-    .card-hidden {
+    .card.card-hidden {
       opacity: 0;
-      transform: translateY(24px) scale(0.96);
+      transform: translateY(32px) scale(0.96);
       pointer-events: none;
     }
 
-    .card-appear {
-      animation: pixelate-in 420ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    .card.card-appear,
+    .card.card-disappear {
+      animation-fill-mode: forwards;
     }
 
-    .card-disappear {
-      animation: pixelate-out 420ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    .card.card-appear {
+      image-rendering: pixelated;
+      animation: pixelate-in 520ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .card.card-disappear {
+      image-rendering: auto;
+      animation: pixelate-out 520ms cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .card::before {
       content: '';
       position: absolute;
-      inset: -6px;
-      border-radius: 20px;
-      padding: 6px;
-      background: linear-gradient(
-        120deg,
-        var(--cyan),
-        var(--magenta),
-        var(--cyan-2)
-      );
+      inset: -1px;
+      border-radius: 22px;
+      padding: 1px;
+      background: linear-gradient(120deg, var(--cyan) 0%, var(--magenta) 45%, var(--cyan-2) 75%, var(--magenta) 100%);
       -webkit-mask:
         linear-gradient(#000 0 0) content-box,
         linear-gradient(#000 0 0);
       -webkit-mask-composite: xor;
       mask-composite: exclude;
-      pointer-events: none;
       filter:
-        drop-shadow(0 0 12px rgba(83, 240, 255, 0.8))
-        drop-shadow(0 0 20px rgba(255, 59, 125, 0.5));
-    }
-
-    .panel-fill {
-      position: absolute;
-      inset: 10px;
-      border-radius: 18px;
-      background: radial-gradient(
-        80% 120% at 50% 40%,
-        rgba(6, 9, 20, 0.95),
-        rgba(3, 5, 13, 0.96)
-      );
+        drop-shadow(0 0 6px rgba(83, 240, 255, 0.6))
+        drop-shadow(0 0 12px rgba(83, 240, 255, 0.45))
+        drop-shadow(0 0 16px rgba(255, 59, 125, 0.35));
       z-index: 0;
       pointer-events: none;
     }
 
+    .card::after {
+      content: '';
+      position: absolute;
+      inset: 16px;
+      border-radius: 18px;
+      border: 1px solid rgba(83, 240, 255, 0.32);
+      box-shadow:
+        inset 0 0 18px rgba(83, 240, 255, 0.32),
+        inset 0 0 0 1px rgba(255, 59, 125, 0.32);
+      mix-blend-mode: screen;
+      pointer-events: none;
+      z-index: 0;
+      animation: neon-flicker 7s ease-in-out infinite;
+    }
+
     .grid-overlay {
       position: absolute;
-      inset: 12px;
+      inset: 18px;
       border-radius: 14px;
-      background:
-        radial-gradient(60% 100% at 50% 80%, rgba(83,240,255,0.18), transparent 60%),
-        radial-gradient(80% 80% at 50% 0%, rgba(255,59,125,0.12), transparent 60%);
+      background-image:
+        radial-gradient(60% 100% at 50% 80%, rgba(83, 240, 255, 0.18), transparent 60%),
+        radial-gradient(80% 80% at 50% 0%, rgba(255, 59, 125, 0.12), transparent 60%);
       opacity: 0.5;
       mix-blend-mode: screen;
+      filter: drop-shadow(0 0 10px rgba(83, 240, 255, 0.25));
       z-index: 1;
+    }
+
+    .floor-glow {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 120%, rgba(83, 240, 255, 0.18), transparent 50%),
+        radial-gradient(circle at 50% 130%, rgba(255, 59, 125, 0.12), transparent 55%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .panel-fill {
+      position: absolute;
+      inset: 14px;
+      border-radius: 18px;
+      background: radial-gradient(80% 120% at 50% 40%, rgba(6, 9, 20, 0.95), rgba(3, 5, 13, 0.96) 55%, rgba(2, 3, 9, 0.98) 70%);
+      box-shadow:
+        inset 0 0 40px rgba(0, 0, 0, 0.55),
+        inset 0 0 80px rgba(0, 0, 0, 0.35);
+      z-index: 0;
       pointer-events: none;
     }
 
@@ -178,205 +191,306 @@
       display: inline-flex;
       align-items: center;
       gap: 0.55rem;
-      font-family: 'Audiowide', monospace;
+      font-family: 'Audiowide', 'Press Start 2P', monospace;
       font-size: clamp(0.78rem, 1.5vw, 1rem);
       letter-spacing: 0.12em;
       text-transform: uppercase;
-      padding: 0.9rem 1.2rem;
+      color: var(--text);
+      padding: clamp(0.8rem, 1.3vw, 1.15rem) clamp(0.95rem, 1.7vw, 1.35rem);
+      line-height: 1.12;
+      background: linear-gradient(120deg, rgba(8, 18, 38, 0.9), rgba(7, 15, 32, 0.85));
+      border: 2px solid rgba(83, 240, 255, 0.6);
       border-radius: 10px;
-      border: 2px solid rgba(83,240,255,0.6);
-      background: rgba(8,18,38,0.9);
+      box-shadow:
+        0 0 12px rgba(83, 240, 255, 0.6),
+        inset 0 0 10px rgba(83, 240, 255, 0.35);
       z-index: 2;
     }
 
-    .badge-text {
-      display: inline-block;
-      line-height: 1;
-    }
-
-    .live-dot {
+    .status-dot {
       width: 10px;
       height: 10px;
       border-radius: 50%;
-      background: #ff3b3b; /* red */
-      box-shadow: 0 0 10px rgba(255,59,59,0.6);
-      display: inline-block;
-      flex: 0 0 auto;
-      transform-origin: center;
-      animation: live-pulse 1.6s ease-in-out infinite;
+      background: var(--magenta);
+      box-shadow: 0 0 12px rgba(255, 59, 125, 0.85);
+      animation: pulse 1.6s ease-in-out infinite;
     }
 
-    @keyframes live-pulse {
-      0% { transform: scale(0.95); opacity: 0.85; }
-      50% { transform: scale(1.06); opacity: 1; }
-      100% { transform: scale(0.95); opacity: 0.85; }
-    }
-
-    /* chevrons are part of the badge text for better baseline alignment */
-    .badge-text::after {
-      content: ' ▸▸';
+    .badge .chevrons {
+      display: inline-flex;
+      gap: 0.15rem;
       color: var(--cyan);
-      font-weight: 700;
-      text-shadow: 0 0 8px rgba(31,200,255,0.7);
-      margin-left: 0.35rem;
-      font-size: inherit;
-      line-height: 1;
-      display: inline-block;
-      vertical-align: baseline;
-      opacity: 0.98;
-      transform-origin: left center;
-      animation: chevron-subtle 2.4s ease-in-out infinite;
+      text-shadow: 0 0 10px rgba(83, 240, 255, 0.8);
     }
 
-    @keyframes chevron-subtle {
-      0%,100% { transform: translateX(0); opacity: 0.95; }
-      50% { transform: translateX(1.5px); opacity: 1; }
-    }
-
-    /* MESSAGE — TEXT DEFINES HEIGHT */
     .message {
       z-index: 2;
+      position: relative;
+      font-family: 'Rajdhani', 'Press Start 2P', monospace;
       font-weight: 700;
       font-size: clamp(1.5rem, 2.8vw, 2.4rem);
       line-height: 1.35;
-      padding-inline: 0.4rem;
+      color: var(--text);
+      text-shadow:
+        0 0 12px rgba(83, 240, 255, 0.6),
+        0 0 24px rgba(255, 59, 125, 0.35),
+        0 0 36px rgba(15, 183, 255, 0.32);
       word-break: break-word;
+      min-height: 3.2em;
+      display: flex;
+      align-items: flex-start;
+      justify-content: flex-start;
+      position: relative;
+      padding-inline: clamp(0.3rem, 1vw, 0.6rem);
     }
 
     .message.hidden {
       opacity: 0;
-      transform: translateY(8px);
-      transition: opacity 200ms ease, transform 200ms ease;
+      transform: translateY(12px) scale(0.98);
+      transition: opacity 260ms ease, transform 260ms ease;
     }
 
-    /* pulse keyframes removed (status dot removed) */
+    .status-bar {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      background: rgba(0, 0, 0, 0.32);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 12px;
+      padding: 0.45rem 0.75rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      color: var(--muted);
+      font-family: 'Space Grotesk', system-ui, sans-serif;
+      font-size: 0.95rem;
+      backdrop-filter: blur(8px);
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.05); opacity: 1; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
 
     @keyframes pixelate-in {
-      from { opacity: 0; transform: translateY(10px) scale(0.95); }
-      to { opacity: 1; transform: translateY(0) scale(1); }
+      0% {
+        opacity: 0;
+        transform: translateY(18px) scale(0.8);
+      }
+      60% {
+        opacity: 0.55;
+        transform: translateY(-4px) scale(1.02);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
     }
 
     @keyframes pixelate-out {
-      from { opacity: 1; transform: translateY(0) scale(1); }
-      to { opacity: 0; transform: translateY(10px) scale(0.92); }
+      0% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(18px) scale(0.88);
+      }
     }
+
+    @keyframes neon-flicker {
+      0%, 20%, 35%, 50%, 100% { opacity: 0.9; filter: drop-shadow(0 0 12px rgba(83, 240, 255, 0.5)); }
+      22% { opacity: 0.7; filter: drop-shadow(0 0 8px rgba(83, 240, 255, 0.35)); }
+      38% { opacity: 1; filter: drop-shadow(0 0 14px rgba(255, 59, 125, 0.6)); }
+      55% { opacity: 0.75; filter: drop-shadow(0 0 6px rgba(83, 240, 255, 0.35)); }
+    }
+
   </style>
 </head>
-
 <body>
   <video id="bg-video" class="bg-video" autoplay muted loop playsinline></video>
-
   <div class="shell">
     <div class="card card-hidden">
+      <div class="floor-glow"></div>
       <div class="panel-fill"></div>
       <div class="grid-overlay"></div>
-
-      <div class="badge">
-        <span class="live-dot" aria-hidden="true"></span>
-        <span class="badge-text">NEW COMMENT!</span>
-      </div>
-
+      <div class="badge"><span class="status-dot"></span> <span class="badge-text">Viewer Spotlight</span> <span class="chevrons">▸▸</span></div>
       <div class="message hidden" id="message"></div>
     </div>
   </div>
-
-  <!-- status bar removed -->
+  <div class="status-bar" id="status">Connecting…</div>
 
   <script>
-    const messageEl = document.getElementById('message');
-    const cardEl = document.querySelector('.card');
-    const bgVideo = document.getElementById('bg-video');
-    const badgeTextEl = document.querySelector('.badge-text');
-
     const LANGUAGE_STORAGE_KEY = 'chatspotlight-lang';
+
+    const messageEl = document.querySelector('#message');
+    const statusEl = document.querySelector('#status');
+    const badgeEl = document.querySelector('.badge');
+    const cardEl = document.querySelector('.card');
+    const bgVideo = document.querySelector('#bg-video');
+
     const translations = {
-      en: 'NEW COMMENT!',
-      de: 'NEUER KOMMENTAR!'
+      en: { badge: 'NEW COMMENT!' },
+      de: { badge: 'NEUER KOMMENTAR!' },
     };
 
-    const applyLanguage = (lang) => {
-      const code = String(lang || localStorage.getItem(LANGUAGE_STORAGE_KEY) || 'en').slice(0,2).toLowerCase();
-      if (badgeTextEl) badgeTextEl.textContent = translations[code] || translations.en;
+    let currentLang = localStorage.getItem(LANGUAGE_STORAGE_KEY) || 'en';
+
+    const t = (key) => {
+      const table = translations[currentLang] || translations.en;
+      return table?.[key] || translations.en[key] || key;
     };
 
-    // apply current language on load
-    try { applyLanguage(); } catch (err) {}
+    const applyLanguage = () => {
+      if (badgeEl) {
+        badgeEl.innerHTML = `<span class="status-dot"></span> <span class="badge-text">${t('badge')}</span> <span class="chevrons">▸▸</span>`;
+      }
+    };
 
-    // update if main page changes the language in another tab/frame
+    // update when main page changes language
     window.addEventListener('storage', (e) => {
-      if (e.key === LANGUAGE_STORAGE_KEY) applyLanguage(e.newValue);
+      if (e.key === LANGUAGE_STORAGE_KEY) {
+        currentLang = String(e.newValue || 'en');
+        applyLanguage();
+      }
     });
+
+    const initVideo = () => {
+      if (!bgVideo) return;
+      const src = customVideo || defaultVideo;
+      bgVideo.src = src;
+      bgVideo.addEventListener('error', () => {
+        bgVideo.style.display = 'none';
+      });
+    };
 
     const WS_PATH = '/ws/chat';
-    const DISPLAY_MS = 100000;
+    const DISPLAY_MS = 100000; // show message for ~100 seconds
+    const PIXEL_ANIM_MS = 520;
     const TYPE_SPEED_MS = 28;
-    const LAST_KEY = 'chatspotlight-last';
+    let hideTimer = null;
+    let typeTimer = null;
 
-    let hideTimer, typeTimer;
+    const params = new URLSearchParams(window.location.search);
+    const customVideo = params.get('video');
+    const defaultVideo = 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4';
 
-    const params = new URLSearchParams(location.search);
-    const videoSrc = params.get('video')
-      || 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4';
-
-    bgVideo.src = videoSrc;
-
-    const wsUrl = new URL(WS_PATH, location.href);
-    wsUrl.protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = new URL(WS_PATH, window.location.href);
+    wsUrl.protocol = wsUrl.protocol === 'https:' ? 'wss:' : 'ws:';
     const socket = new WebSocket(wsUrl);
 
-    const typeText = text => new Promise(resolve => {
-      messageEl.textContent = '';
-      let i = 0;
-      typeTimer = setInterval(() => {
-        messageEl.textContent = text.slice(0, ++i);
-        if (i >= text.length) {
-          clearInterval(typeTimer);
-          resolve();
-        }
-      }, TYPE_SPEED_MS);
-    });
+    const isViewerCustom = (payload) => {
+      if (!payload || !payload.custom) return false;
+      const user = String(payload.user || '').toLowerCase();
+      return user === 'viewer';
+    };
 
-    const showMessage = async text => {
-      try {
-        localStorage.setItem(LAST_KEY, String(text || ''));
-      } catch (err) {
-        /* ignore storage errors */
+    applyLanguage();
+    initVideo();
+
+    const resetTypewriter = () => {
+      if (typeTimer) {
+        clearInterval(typeTimer);
+        typeTimer = null;
       }
-      clearTimeout(hideTimer);
-      messageEl.classList.remove('hidden');
+      if (messageEl) {
+        messageEl.textContent = '';
+        messageEl.dataset.typing = 'false';
+      }
+    };
 
-      cardEl.classList.remove('card-hidden', 'card-disappear');
-      cardEl.classList.add('card-appear');
+    const typeText = (text) => {
+      return new Promise((resolve) => {
+        if (!messageEl) {
+          resolve();
+          return;
+        }
+        resetTypewriter();
+        const content = text || '';
+        if (!content.length) {
+          resolve();
+          return;
+        }
+        let idx = 0;
+        messageEl.dataset.typing = 'true';
+        typeTimer = setInterval(() => {
+          idx += 1;
+          const done = idx >= content.length;
+          if (done) {
+            messageEl.textContent = content;
+            clearInterval(typeTimer);
+            typeTimer = null;
+            messageEl.dataset.typing = 'false';
+            resolve();
+            return;
+          }
+          messageEl.textContent = content.slice(0, idx);
+        }, TYPE_SPEED_MS);
+      });
+    };
 
-      await typeText(text);
+    const showMessage = async (payload) => {
+      if (!payload) return;
+      if (hideTimer) clearTimeout(hideTimer);
+      resetTypewriter();
+
+      const text = (payload.text || '').trim();
+      if (messageEl) {
+        messageEl.classList.remove('hidden');
+      }
+
+      if (cardEl) {
+        cardEl.classList.remove('card-hidden', 'card-disappear', 'card-appear');
+        void cardEl.offsetWidth; // restart animation
+        cardEl.classList.add('card-appear');
+      }
+
+      if (statusEl) statusEl.textContent = 'LIVE';
+
+      await typeText(text || 'New message');
 
       hideTimer = setTimeout(() => {
-        messageEl.classList.add('hidden');
-        cardEl.classList.replace('card-appear', 'card-disappear');
-        setTimeout(() => cardEl.classList.add('card-hidden'), 420);
+        if (messageEl) messageEl.classList.add('hidden');
+        if (cardEl) {
+          cardEl.classList.remove('card-appear');
+          cardEl.classList.add('card-disappear');
+          setTimeout(() => {
+            cardEl.classList.add('card-hidden');
+            cardEl.classList.remove('card-disappear');
+          }, PIXEL_ANIM_MS);
+        }
       }, DISPLAY_MS);
     };
 
-    // socket open - no visible live indicator
-    socket.onopen = () => {};
+    socket.addEventListener('open', () => {
+      if (statusEl) statusEl.textContent = 'Connected';
+    });
 
-    // show last saved message on load (if any)
-    try {
-      const last = localStorage.getItem(LAST_KEY);
-      if (last) setTimeout(() => showMessage(last), 60);
-    } catch (err) {}
-
-    socket.onmessage = e => {
+    socket.addEventListener('message', (event) => {
       try {
-        const p = JSON.parse(e.data);
-        if (p?.text) showMessage(p.text);
-      } catch {}
-    };
+        const payload = JSON.parse(event.data);
+        if (payload.type === 'history' && Array.isArray(payload.messages)) {
+          const latest = [...payload.messages].reverse().find(isViewerCustom);
+          if (latest) showMessage(latest);
+          return;
+        }
+        if (payload.type === 'chat' && isViewerCustom(payload)) {
+          showMessage(payload);
+        }
+      } catch (err) {
+        console.warn('Bad payload', err);
+      }
+    });
 
-    socket.onclose = () => {
-      // keep retry behavior without a visual status bar
-      setTimeout(() => location.reload(), 4000);
-    };
+    socket.addEventListener('close', () => {
+      if (statusEl) statusEl.textContent = 'Disconnected – retrying…';
+      setTimeout(() => window.location.reload(), 4000);
+    });
+
+    socket.addEventListener('error', () => {
+      if (statusEl) statusEl.textContent = 'Connection error';
+    });
   </script>
 </body>
 </html>
