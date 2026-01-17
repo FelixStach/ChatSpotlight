@@ -70,17 +70,16 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: clamp(0.5rem, 3vw, 2.5rem);
+      padding: 0; /* ensure available width is consistent */
       overflow: hidden;
     }
 
     .card {
-      width: 92%;
-      max-width: 1180px;
-      min-height: 220px;
+      width: 90%;
+      max-width: none;
       background: linear-gradient(145deg, rgba(10, 13, 28, 0.92), rgba(6, 8, 20, 0.9));
       border-radius: 24px;
-      border: 1px solid rgba(83, 240, 255, 0.28);
+      border: 2px solid rgba(83, 240, 255, 0.28);
       padding: clamp(1.35rem, 2.1vw, 1.85rem);
       display: flex;
       flex-direction: column;
@@ -113,6 +112,8 @@
       animation: pixelate-in 520ms cubic-bezier(0.22, 1, 0.36, 1);
     }
 
+    /* always thicker outline */
+
     .card.card-disappear {
       image-rendering: auto;
       animation: pixelate-out 520ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -121,9 +122,9 @@
     .card::before {
       content: '';
       position: absolute;
-      inset: -1px;
+      inset: -14px;
       border-radius: 22px;
-      padding: 1px;
+      padding: 14px;
       background: linear-gradient(120deg, var(--cyan) 0%, var(--magenta) 45%, var(--cyan-2) 75%, var(--magenta) 100%);
       -webkit-mask:
         linear-gradient(#000 0 0) content-box,
@@ -131,11 +132,11 @@
       -webkit-mask-composite: xor;
       mask-composite: exclude;
       filter:
-        drop-shadow(0 0 6px rgba(83, 240, 255, 0.6))
-        drop-shadow(0 0 12px rgba(83, 240, 255, 0.45))
-        drop-shadow(0 0 16px rgba(255, 59, 125, 0.35));
+        drop-shadow(0 0 20px rgba(83, 240, 255, 1))
+        drop-shadow(0 0 36px rgba(255, 59, 125, 0.85));
       z-index: 0;
       pointer-events: none;
+      transition: filter 260ms ease;
     }
 
     .card::after {
@@ -188,7 +189,7 @@
     }
 
     .badge {
-      display: inline-flex;
+      display: flex;
       align-items: center;
       gap: 0.55rem;
       font-family: 'Audiowide', 'Press Start 2P', monospace;
@@ -197,6 +198,8 @@
       text-transform: uppercase;
       color: var(--text);
       padding: clamp(0.8rem, 1.3vw, 1.15rem) clamp(0.95rem, 1.7vw, 1.35rem);
+      width: 100%;
+      box-sizing: border-box;
       line-height: 1.12;
       background: linear-gradient(120deg, rgba(8, 18, 38, 0.9), rgba(7, 15, 32, 0.85));
       border: 2px solid rgba(83, 240, 255, 0.6);
@@ -205,6 +208,18 @@
         0 0 12px rgba(83, 240, 255, 0.6),
         inset 0 0 10px rgba(83, 240, 255, 0.35);
       z-index: 2;
+    }
+
+    .badge-block {
+      display: flex;
+      flex-direction: column;
+      gap: clamp(0.6rem, 1.2vw, 1rem); /* increased gap between badge and message */
+      margin-block: clamp(0.6rem, 1.2vw, 1rem);
+      /* use internal padding so badge doesn't touch the right edge */
+      padding-inline: clamp(0.4rem, 1vw, 0.6rem);
+      align-items: stretch;
+      width: 100%;
+      box-sizing: border-box;
     }
 
     .status-dot {
@@ -223,6 +238,14 @@
       text-shadow: 0 0 10px rgba(83, 240, 255, 0.8);
     }
 
+    .badge-text {
+      white-space: nowrap; /* prevent breaking */
+      overflow: hidden;
+      text-overflow: clip;
+      display: inline-block;
+      vertical-align: middle;
+    }
+
     .message {
       z-index: 2;
       position: relative;
@@ -236,7 +259,9 @@
         0 0 24px rgba(255, 59, 125, 0.35),
         0 0 36px rgba(15, 183, 255, 0.32);
       word-break: break-word;
-      min-height: 3.2em;
+      min-height: 1.35em; /* single-line height, will grow when text wraps */
+      /* vertical spacing handled by .badge-block */
+      margin: 0;
       display: flex;
       align-items: flex-start;
       justify-content: flex-start;
@@ -315,8 +340,10 @@
       <div class="floor-glow"></div>
       <div class="panel-fill"></div>
       <div class="grid-overlay"></div>
-      <div class="badge"><span class="status-dot"></span> <span class="badge-text">Viewer Spotlight</span> <span class="chevrons">▸▸</span></div>
-      <div class="message hidden" id="message"></div>
+      <div class="badge-block">
+        <div class="badge"><span class="status-dot"></span> <span class="badge-text">Viewer Spotlight</span> <span class="chevrons">▸▸</span></div>
+        <div class="message hidden" id="message"></div>
+      </div>
     </div>
   </div>
   <div class="status-bar" id="status">Connecting…</div>
