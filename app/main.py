@@ -165,6 +165,11 @@ async def root() -> FileResponse:
     return FileResponse(STATIC_DIR / "index.html")
 
 
+@app.get("/overlay", response_class=FileResponse)
+async def overlay() -> FileResponse:
+    return FileResponse(STATIC_DIR / "overlay.html")
+
+
 @app.websocket("/ws/chat")
 async def websocket_endpoint(websocket: WebSocket) -> None:
     await manager.connect(websocket)
