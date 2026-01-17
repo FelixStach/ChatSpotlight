@@ -51,17 +51,7 @@
       opacity: 0.32;
     }
 
-    .bg-video {
-      position: fixed;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      opacity: 0.82;
-      filter: saturate(1.12) contrast(1.05);
-      pointer-events: none;
-      z-index: 0;
-    }
+    /* background video removed to keep overlay fully transparent */
 
     .shell {
       position: relative;
@@ -105,18 +95,17 @@
     .card.card-appear,
     .card.card-disappear {
       animation-fill-mode: forwards;
+      will-change: transform, opacity;
     }
 
     .card.card-appear {
-      image-rendering: pixelated;
-      animation: pixelate-in 520ms cubic-bezier(0.22, 1, 0.36, 1);
+      animation: smooth-appear 640ms cubic-bezier(0.22, 0.12, 0.12, 1);
     }
 
     /* always thicker outline */
 
     .card.card-disappear {
-      image-rendering: auto;
-      animation: pixelate-out 520ms cubic-bezier(0.4, 0, 0.2, 1);
+      animation: smooth-disappear 640ms cubic-bezier(0.33, 0.0, 0.1, 1);
     }
 
     .card::before {
@@ -298,29 +287,34 @@
       100% { transform: scale(0.95); opacity: 0.8; }
     }
 
-    @keyframes pixelate-in {
+    @keyframes smooth-appear {
       0% {
         opacity: 0;
-        transform: translateY(18px) scale(0.8);
+        transform: translateY(20px) scale(0.96);
+        filter: blur(6px) saturate(0.95);
       }
-      60% {
-        opacity: 0.55;
-        transform: translateY(-4px) scale(1.02);
+      55% {
+        opacity: 1;
+        transform: translateY(-6px) scale(1.02);
+        filter: blur(0px) saturate(1.04);
       }
       100% {
         opacity: 1;
         transform: translateY(0) scale(1);
+        filter: none;
       }
     }
 
-    @keyframes pixelate-out {
+    @keyframes smooth-disappear {
       0% {
         opacity: 1;
         transform: translateY(0) scale(1);
+        filter: none;
       }
       100% {
         opacity: 0;
-        transform: translateY(18px) scale(0.88);
+        transform: translateY(18px) scale(0.96);
+        filter: blur(4px) saturate(0.9);
       }
     }
 
@@ -334,7 +328,7 @@
   </style>
 </head>
 <body>
-  <video id="bg-video" class="bg-video" autoplay muted loop playsinline></video>
+  <!-- background video removed to render overlay fully transparent -->
   <div class="shell">
     <div class="card card-hidden">
       <div class="floor-glow"></div>
@@ -355,8 +349,6 @@
     const statusEl = document.querySelector('#status');
     const badgeEl = document.querySelector('.badge');
     const cardEl = document.querySelector('.card');
-    const bgVideo = document.querySelector('#bg-video');
-
     const translations = {
       en: { badge: 'NEW COMMENT!' },
       de: { badge: 'NEUER KOMMENTAR!' },
@@ -383,25 +375,19 @@
       }
     });
 
-    const initVideo = () => {
-      if (!bgVideo) return;
-      const src = customVideo || defaultVideo;
-      bgVideo.src = src;
-      bgVideo.addEventListener('error', () => {
-        bgVideo.style.display = 'none';
-      });
-    };
+    /* background video initialization removed */
 
     const WS_PATH = '/ws/chat';
-    const DISPLAY_MS = 100000; // show message for ~100 seconds
-    const PIXEL_ANIM_MS = 520;
+    // After the typewriter finishes, keep the fully-rendered message visible
+    // for 4 seconds before hiding it.
+    const DISPLAY_MS = 4000; // show message for 4 seconds after typing
+    // match JS timing to new CSS animation duration for smooth appear/disappear
+    const PIXEL_ANIM_MS = 640;
     const TYPE_SPEED_MS = 28;
     let hideTimer = null;
     let typeTimer = null;
 
-    const params = new URLSearchParams(window.location.search);
-    const customVideo = params.get('video');
-    const defaultVideo = 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4';
+    /* removed URL params and video defaults; overlay renders transparent */
 
     const wsUrl = new URL(WS_PATH, window.location.href);
     wsUrl.protocol = wsUrl.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -414,7 +400,6 @@
     };
 
     applyLanguage();
-    initVideo();
 
     const resetTypewriter = () => {
       if (typeTimer) {
