@@ -1959,6 +1959,7 @@
       const sendBtn = document.querySelector('.custom-submit');
       if (sendBtn) sendBtn.setAttribute('title', t('actions.send'));
       updateTwitchTooltip();
+      refreshLocalizedRoleLabels();
       updateLanguageLabel();
     };
 
@@ -1976,6 +1977,23 @@
       if (normalized === 'viewer' || normalized === 'zuschauer') return t('role.viewer');
       if (normalized === 'internal' || normalized === 'intern') return t('role.internal');
       return value || '';
+    };
+
+    const refreshLocalizedRoleLabels = () => {
+      if (chatStream) {
+        chatStream.querySelectorAll('.chat-message--custom').forEach((node) => {
+          const badgeEl = node.querySelector('.badge');
+          const rawUser = node.dataset.userRaw || '';
+          if (badgeEl && rawUser) badgeEl.textContent = getRoleLabel(rawUser);
+        });
+      }
+      if (queueList) {
+        queueList.querySelectorAll('.queue-item--custom').forEach((node) => {
+          const userEl = node.querySelector('.queue-user-text') || node.querySelector('.queue-user');
+          const rawUser = node.dataset.userRaw || '';
+          if (userEl && rawUser) userEl.textContent = getRoleLabel(rawUser);
+        });
+      }
     };
 
     const updateLanguageLabel = () => {
@@ -2522,7 +2540,9 @@
       const node = chatTemplate.content.firstElementChild.cloneNode(true);
       node.dataset.messageId = message.id;
       const badgeEl = node.querySelector('.badge');
-      if (badgeEl) badgeEl.textContent = message.user;
+      const badgeLabel = message.custom === true ? getRoleLabel(message.user) : message.user;
+      node.dataset.userRaw = message.user ?? '';
+      if (badgeEl) badgeEl.textContent = badgeLabel;
       renderTextWithEmotes(node.querySelector('.text'), message, { variant: 'chat' });
       node.querySelector('.timestamp').textContent = formatClockTime(message.timestampMs);
       node.classList.toggle('chat-message--custom', message.custom === true);
@@ -2648,7 +2668,11 @@
       const pinnedFlag = node.querySelector('.queue-flag--pinned');
 
       node.dataset.messageId = payload.id;
-      if (userEl) userEl.textContent = message?.user ?? payload.user ?? '';
+      const rawUser = message?.user ?? payload.user ?? '';
+      const isCustom = message?.custom === true || payload.custom === true;
+      const userLabel = isCustom ? getRoleLabel(rawUser) : rawUser;
+      node.dataset.userRaw = rawUser;
+      if (userEl) userEl.textContent = userLabel;
       const queueText = message?.text ?? payload.text ?? '';
       if (textEl) {
         renderTextWithEmotes(textEl, message || payload, { variant: 'queue' });
