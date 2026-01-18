@@ -354,7 +354,7 @@
       de: { badge: 'NEUER KOMMENTAR!' },
     };
 
-    let currentLang = localStorage.getItem(LANGUAGE_STORAGE_KEY) || 'en';
+    let currentLang = localStorage.getItem(LANGUAGE_STORAGE_KEY) || 'de';
 
     const t = (key) => {
       const table = translations[currentLang] || translations.en;
@@ -370,7 +370,7 @@
     // update when main page changes language
     window.addEventListener('storage', (e) => {
       if (e.key === LANGUAGE_STORAGE_KEY) {
-        currentLang = String(e.newValue || 'en');
+        currentLang = String(e.newValue || 'de');
         applyLanguage();
       }
     });
