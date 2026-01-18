@@ -715,9 +715,111 @@
     }
 
     .auth-error {
-      color: #f29b9b;
-      min-height: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0;
+      border-radius: 12px;
+      border: 1px solid rgba(240, 122, 122, 0.5);
+      background: rgba(240, 122, 122, 0.12);
+      color: #f7c6c6;
       font-size: 0.92rem;
+      opacity: 0;
+      transform: translateY(-6px);
+      max-height: 0;
+      overflow: hidden;
+      transition:
+        opacity 240ms ease,
+        transform 260ms ease,
+        max-height 320ms ease,
+        padding 240ms ease,
+        margin 240ms ease;
+      will-change: opacity, transform, max-height;
+    }
+
+    .auth-error[data-visible="true"] {
+      padding: 0.55rem 0.7rem;
+      margin-top: 0.4rem;
+      opacity: 1;
+      transform: translateY(0);
+      max-height: 120px;
+    }
+
+    .auth-error-icon {
+      width: 26px;
+      height: 26px;
+      border-radius: 999px;
+      background: rgba(240, 122, 122, 0.2);
+      border: 1px solid rgba(240, 122, 122, 0.75);
+      color: #f07a7a;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .auth-error-icon svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+      stroke-width: 2.5;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .auth-success {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0;
+      border-radius: 12px;
+      border: 1px solid rgba(88, 221, 161, 0.45);
+      background: rgba(88, 221, 161, 0.12);
+      color: #bff7df;
+      font-size: 0.92rem;
+      opacity: 0;
+      transform: translateY(-6px);
+      max-height: 0;
+      overflow: hidden;
+      transition:
+        opacity 240ms ease,
+        transform 260ms ease,
+        max-height 320ms ease,
+        padding 240ms ease,
+        margin 240ms ease;
+      will-change: opacity, transform, max-height;
+    }
+
+    .auth-success[data-visible="true"] {
+      padding: 0.55rem 0.7rem;
+      margin-top: 0.4rem;
+      opacity: 1;
+      transform: translateY(0);
+      max-height: 120px;
+    }
+
+    .auth-success-icon {
+      width: 26px;
+      height: 26px;
+      border-radius: 999px;
+      background: rgba(88, 221, 161, 0.2);
+      border: 1px solid rgba(88, 221, 161, 0.75);
+      color: #58dda1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .auth-success-icon svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+      stroke-width: 2.5;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
     .auth-actions {
@@ -1625,7 +1727,22 @@
           <label for="auth-password" data-i18n="auth.password">Password</label>
           <input id="auth-password" class="auth-input" type="password" name="password" required />
         </div>
-        <div id="auth-error" class="auth-error" role="status" aria-live="polite"></div>
+        <div id="auth-error" class="auth-error" role="status" aria-live="polite" data-visible="false">
+          <span class="auth-error-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M7 7l10 10M17 7l-10 10" />
+            </svg>
+          </span>
+          <span id="auth-error-text" class="auth-error-text" data-i18n="auth.error">Wrong password. Please try again.</span>
+        </div>
+        <div id="auth-success" class="auth-success" role="status" aria-live="polite" data-visible="false">
+          <span class="auth-success-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M5 12.5l4 4 10-10" />
+            </svg>
+          </span>
+          <span class="auth-success-text" data-i18n="auth.success">Access granted.</span>
+        </div>
         <div class="auth-actions">
           <button type="button" class="btn-secondary" id="auth-cancel" data-i18n="auth.cancel">Cancel</button>
           <button type="submit" class="btn-primary" data-i18n="auth.unlock">Unlock</button>
@@ -1808,6 +1925,8 @@
     const authForm = document.querySelector('#auth-form');
     const authInput = document.querySelector('#auth-password');
     const authError = document.querySelector('#auth-error');
+    const authErrorText = document.querySelector('#auth-error-text');
+    const authSuccess = document.querySelector('#auth-success');
     const authCancel = document.querySelector('#auth-cancel');
     const settingsTrigger = document.querySelector('#settings-trigger');
     const settingsOverlay = document.querySelector('#settings-overlay');
@@ -1855,6 +1974,7 @@
         'auth.cancel': 'Cancel',
         'auth.unlock': 'Unlock',
         'auth.error': 'Wrong password. Please try again.',
+        'auth.success': 'Access granted.',
         'confirm.hint': 'Enter to send, Esc to cancel',
         'confirm.title': 'Send message?',
         'confirm.cancel': 'Cancel',
@@ -1897,6 +2017,7 @@
         'auth.cancel': 'Abbrechen',
         'auth.unlock': 'Entsperren',
         'auth.error': 'Falsches Passwort. Bitte erneut versuchen.',
+        'auth.success': 'Zugriff gewährt.',
         'confirm.hint': 'Enter zum Senden, Esc zum Abbrechen',
         'confirm.title': 'Nachricht senden?',
         'confirm.cancel': 'Abbrechen',
@@ -2033,6 +2154,8 @@
     let twitchToggleEnabled = true;
     let authToken = sessionStorage.getItem(SESSION_STORAGE_KEY) || null;
     let pendingAuthAction = null;
+    let authSuccessTimer = null;
+    let authErrorTimer = null;
 
     const setAuthToken = (token) => {
       authToken = token || null;
@@ -2064,14 +2187,24 @@
       authOverlay.removeAttribute('data-open');
       pendingAuthAction = null;
       if (authForm) authForm.reset();
-      if (authError) authError.textContent = '';
+      if (authError) authError.setAttribute('data-visible', 'false');
+      if (authSuccess) authSuccess.setAttribute('data-visible', 'false');
+      if (authSuccessTimer) {
+        clearTimeout(authSuccessTimer);
+        authSuccessTimer = null;
+      }
+      if (authErrorTimer) {
+        clearTimeout(authErrorTimer);
+        authErrorTimer = null;
+      }
     };
 
     const openAuthModal = (nextAction = null) => {
       pendingAuthAction = nextAction;
       if (!authOverlay) return;
       authOverlay.setAttribute('data-open', 'true');
-      if (authError) authError.textContent = '';
+      if (authError) authError.setAttribute('data-visible', 'false');
+      if (authSuccess) authSuccess.setAttribute('data-visible', 'false');
       focusAuthField();
     };
 
@@ -2292,12 +2425,30 @@
           const data = await resp.json();
           if (!data?.token) throw new Error('Missing token');
           setAuthToken(data.token);
-          closeAuthModal();
+          if (authError) authError.setAttribute('data-visible', 'false');
+          if (authSuccess) {
+            authSuccess.setAttribute('data-visible', 'true');
+          }
           const action = pendingAuthAction;
           pendingAuthAction = null;
-          if (typeof action === 'function') action();
+          const finalizeAuth = () => {
+            closeAuthModal();
+            if (typeof action === 'function') action();
+          };
+          if (authSuccess) {
+            if (authSuccessTimer) clearTimeout(authSuccessTimer);
+            authSuccessTimer = setTimeout(finalizeAuth, 1200);
+          } else {
+            finalizeAuth();
+          }
         } catch (err) {
-          if (authError) authError.textContent = t('auth.error');
+          if (authErrorText) authErrorText.textContent = t('auth.error');
+          if (authError) authError.setAttribute('data-visible', 'true');
+          if (authSuccess) authSuccess.setAttribute('data-visible', 'false');
+          if (authErrorTimer) clearTimeout(authErrorTimer);
+          authErrorTimer = setTimeout(() => {
+            if (authError) authError.setAttribute('data-visible', 'false');
+          }, 3600);
           console.warn('Authentication failed', err);
         }
       });
