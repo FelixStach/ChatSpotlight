@@ -2422,9 +2422,14 @@
         const blob = await resp.blob();
         const url = URL.createObjectURL(blob);
         const anchor = document.createElement('a');
-        const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const now = new Date();
+        const pad = (value) => String(value).padStart(2, '0');
+        const stamp = `${pad(now.getDate())}-${pad(now.getMonth() + 1)}-${String(now.getFullYear()).slice(-2)}@${pad(now.getHours())}-${pad(now.getMinutes())}`;
+        const rawChannel = channelTitle?.textContent || 'Channel';
+        const cleanChannel = rawChannel.replace(/\s*chat\s*$/i, '').trim() || 'Channel';
+        const safeChannel = cleanChannel.replace(/[^a-z0-9_-]+/gi, '_').replace(/^_+|_+$/g, '');
         anchor.href = url;
-        anchor.download = `chat-log-${stamp}.txt`;
+        anchor.download = `Chatlog_${safeChannel}_${stamp}.txt`;
         document.body.appendChild(anchor);
         anchor.click();
         anchor.remove();
