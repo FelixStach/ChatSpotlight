@@ -742,6 +742,7 @@
       background: rgba(240, 122, 122, 0.12);
       color: #f7c6c6;
       font-size: 0.92rem;
+      line-height: 1.4;
       opacity: 0;
       transform: translateY(-6px);
       max-height: 0;
@@ -755,12 +756,14 @@
       will-change: opacity, transform, max-height;
     }
 
-    .auth-error[data-visible="true"] {
+    .auth-error[data-visible="true"],
+    .auth-success[data-visible="true"] {
       padding: 0.55rem 0.7rem;
       margin-top: 0.4rem;
       opacity: 1;
       transform: translateY(0);
       max-height: 120px;
+      min-height: 3.2rem;
     }
 
     .auth-error-icon {
@@ -796,6 +799,7 @@
       background: rgba(88, 221, 161, 0.12);
       color: #bff7df;
       font-size: 0.92rem;
+      line-height: 1.4;
       opacity: 0;
       transform: translateY(-6px);
       max-height: 0;
@@ -809,13 +813,6 @@
       will-change: opacity, transform, max-height;
     }
 
-    .auth-success[data-visible="true"] {
-      padding: 0.55rem 0.7rem;
-      margin-top: 0.4rem;
-      opacity: 1;
-      transform: translateY(0);
-      max-height: 120px;
-    }
 
     .auth-success-icon {
       width: 26px;
@@ -1035,6 +1032,12 @@
       border-color: rgba(88, 221, 161, 0.5);
       background: linear-gradient(135deg, rgba(88, 221, 161, 0.2), rgba(40, 70, 58, 0.6));
       color: #b3f2d8;
+    }
+
+    .btn-primary:hover {
+      border-color: rgba(88, 221, 161, 0.85);
+      background: linear-gradient(135deg, rgba(88, 221, 161, 0.32), rgba(40, 90, 68, 0.68));
+      color: #d6f7ea;
     }
 
     .btn-danger {
@@ -1287,6 +1290,107 @@
       font-weight: 700;
       color: var(--text-primary);
       letter-spacing: 0.02em;
+    }
+
+    .queue-title--button {
+      border: 0;
+      background: transparent;
+      padding: 0;
+      font: inherit;
+      line-height: inherit;
+      color: inherit;
+      cursor: pointer;
+      transition: color 140ms ease, transform 120ms ease;
+    }
+
+    .queue-title--button:active {
+      transform: translateY(1px);
+    }
+
+    .queue-toggle-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+
+    .queue-toggle {
+      border: 1px solid var(--panel-border);
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-primary);
+      border-radius: 12px;
+      padding: 0.55rem 1.1rem;
+      cursor: pointer;
+      font-weight: 700;
+      transition: background 140ms ease, border-color 140ms ease, transform 120ms ease, box-shadow 140ms ease, color 140ms ease;
+    }
+
+    .queue-toggle[aria-pressed="true"] {
+      border-color: rgba(248, 180, 88, 0.7);
+      background: linear-gradient(135deg, rgba(248, 212, 119, 0.32), rgba(140, 88, 18, 0.32));
+      color: #fcebc2;
+      box-shadow: 0 12px 28px rgba(248, 180, 88, 0.35);
+    }
+
+    .queue-toggle[aria-pressed="true"]:hover {
+      border-color: rgba(248, 180, 88, 0.7);
+      background: linear-gradient(135deg, rgba(248, 212, 119, 0.32), rgba(140, 88, 18, 0.32));
+      color: #fcebc2;
+      box-shadow: 0 12px 28px rgba(248, 180, 88, 0.35);
+    }
+
+    .queue-toggle:active {
+      transform: translateY(1px);
+    }
+
+    .queue-switch:active {
+      transform: translateY(1px);
+    }
+
+    .queue-content {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .queue-view {
+      height: 100%;
+      min-height: 0;
+    }
+
+    .queue-view[data-visible="false"] {
+      display: none;
+    }
+
+    .stream-shell {
+      height: 100%;
+      background: rgba(10, 12, 30, 0.65);
+      border-radius: 26px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .stream-frame {
+      width: 100%;
+      height: 100%;
+      border: 0;
+    }
+
+    .stream-fallback {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.2rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      pointer-events: none;
+      background: linear-gradient(180deg, rgba(8, 9, 20, 0.25), rgba(8, 9, 20, 0.65));
     }
 
     .settings-button {
@@ -1645,7 +1749,36 @@
     <section class="panel queue-panel">
       <div class="queue-header">
         <div class="queue-title-group">
-          <h2 class="queue-title">Spotlight</h2>
+          <div class="queue-toggle-group" role="tablist" aria-label="Spotlight stream toggle">
+            <button
+              type="button"
+              class="queue-title queue-title--button queue-toggle"
+              id="spotlight-toggle"
+              aria-pressed="true"
+              data-queue-target="queue"
+              data-i18n="queue.spotlight"
+              title="Show spotlight"
+              data-i18n-attr="title"
+            >
+              Spotlight
+            </button>
+            <button
+              type="button"
+              class="toggle-pill toggle-pill--twitch"
+              id="stream-toggle"
+              aria-pressed="false"
+              data-queue-target="stream"
+              aria-label="Also send to Twitch"
+              data-i18n="actions.twitch"
+              data-i18n-attr="aria-label"
+              title=""
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M4 2h16v12l-4 4h-5l-3 3v-3H4V2Zm3 4v6h2V6H7Zm5 0v6h2V6h-2Z" />
+              </svg>
+              <span class="sr-only">Twitch</span>
+            </button>
+          </div>
           <button
             type="button"
             class="settings-button"
@@ -1670,7 +1803,23 @@
           </button>
         </div>
       </div>
-      <ol id="spotlight-queue" class="queue-list" aria-live="polite" aria-label="Highlighted messages"></ol>
+      <div class="queue-content">
+        <div class="queue-view" data-queue-view="queue" data-visible="true">
+          <ol id="spotlight-queue" class="queue-list" aria-live="polite" aria-label="Highlighted messages"></ol>
+        </div>
+        <div class="queue-view" data-queue-view="stream" data-visible="false">
+          <div class="stream-shell" aria-live="polite">
+            <iframe
+              id="twitch-embed"
+              class="stream-frame"
+              title="Twitch stream"
+              allow="autoplay; fullscreen"
+              allowfullscreen
+            ></iframe>
+            <p class="stream-fallback" id="stream-fallback" data-i18n="queue.streamHint">Stream loads once the channel is ready.</p>
+          </div>
+        </div>
+      </div>
     </section>
 
     <section class="panel chat-panel">
@@ -1999,6 +2148,12 @@
     const queueList = document.querySelector('#spotlight-queue');
     const queueTemplate = document.querySelector('#queue-template');
     const channelTitle = document.querySelector('#channel-name');
+    const spotlightToggleBtn = document.querySelector('#spotlight-toggle');
+    const streamToggleBtn = document.querySelector('#stream-toggle');
+    const queueView = document.querySelector('[data-queue-view="queue"]');
+    const streamView = document.querySelector('[data-queue-view="stream"]');
+    const streamFrame = document.querySelector('#twitch-embed');
+    const streamFallback = document.querySelector('#stream-fallback');
     const customForm = document.querySelector('#custom-message-form');
     const customTextArea = document.querySelector('#custom-text');
     const customResize = document.querySelector('.custom-resize');
@@ -2057,6 +2212,7 @@
 
     const translations = {
       en: {
+        'queue.spotlight': 'Spotlight',
         'compose.open': 'Compose message',
         'compose.close': 'Close composer',
         'role.viewer': 'Viewer',
@@ -2065,6 +2221,8 @@
         'actions.paste': 'Paste from clipboard',
         'actions.send': 'Send message',
         'actions.twitch': 'Also send to Twitch',
+        'queue.stream': 'Stream',
+        'queue.streamHint': 'Stream loads once the channel is ready.',
         'auth.title': 'Moderator access required',
         'auth.subtitle': 'Enter the password to spotlight, pin, or send messages.',
         'auth.password': 'Password',
@@ -2109,6 +2267,7 @@
         'twitch.tooltip.viewerOnly': 'Available only as "Viewer"',
       },
       de: {
+        'queue.spotlight': 'Spotlight',
         'compose.open': 'Nachricht verfassen',
         'compose.close': 'Eingabefeld schließen',
         'role.viewer': 'Zuschauer',
@@ -2117,6 +2276,8 @@
         'actions.paste': 'Aus Zwischenablage einfügen',
         'actions.send': 'Nachricht senden',
         'actions.twitch': 'Auch an Twitch senden',
+        'queue.stream': 'Stream',
+        'queue.streamHint': 'Der Stream lädt, sobald der Kanal bereit ist.',
         'auth.title': 'Moderatorzugang erforderlich',
         'auth.subtitle': 'Gib das Passwort ein, um Nachrichten zu spotlighten, zu pinnen oder zu senden.',
         'auth.password': 'Passwort',
@@ -2252,6 +2413,65 @@
       }
     };
 
+    const getStreamChannelFromTitle = () => {
+      const raw = (channelTitle?.textContent || '').toString();
+      const clean = raw.replace(/\s*chat\s*$/i, '').trim().replace(/^#/, '');
+      return clean || null;
+    };
+
+    const getEmbedParent = () => {
+      const host = window.location.hostname;
+      return host && host.length ? host : 'localhost';
+    };
+
+    const buildTwitchEmbedUrl = (channel) => {
+      if (!channel) return '';
+      const params = new URLSearchParams({
+        channel,
+        parent: getEmbedParent(),
+        autoplay: 'false',
+        muted: 'true',
+        controls: 'false',
+        playsinline: 'true',
+      });
+      return `https://player.twitch.tv/?${params.toString()}`;
+    };
+
+    const setStreamFallback = (visible) => {
+      if (!streamFallback) return;
+      streamFallback.style.display = visible ? 'flex' : 'none';
+    };
+
+    const updateStreamEmbed = (channelName) => {
+      const clean = (channelName || '').toString().trim().replace(/^#/, '');
+      streamChannel = clean || null;
+      if (!streamFrame) return;
+      if (!streamChannel) {
+        streamFrame.removeAttribute('src');
+        streamEmbedReady = false;
+        setStreamFallback(true);
+        return;
+      }
+      const nextUrl = buildTwitchEmbedUrl(streamChannel);
+      if (streamFrame.getAttribute('src') !== nextUrl) {
+        streamFrame.setAttribute('src', nextUrl);
+      }
+      streamEmbedReady = true;
+      setStreamFallback(false);
+    };
+
+    const setQueueView = (next) => {
+      queueViewMode = next === 'stream' ? 'stream' : 'queue';
+      if (queueView) queueView.setAttribute('data-visible', queueViewMode === 'queue' ? 'true' : 'false');
+      if (streamView) streamView.setAttribute('data-visible', queueViewMode === 'stream' ? 'true' : 'false');
+      if (spotlightToggleBtn) spotlightToggleBtn.setAttribute('aria-pressed', queueViewMode === 'queue' ? 'true' : 'false');
+      if (streamToggleBtn) streamToggleBtn.setAttribute('aria-pressed', queueViewMode === 'stream' ? 'true' : 'false');
+      if (queueViewMode === 'stream') {
+        if (!streamChannel) updateStreamEmbed(getStreamChannelFromTitle());
+        if (!streamChannel) setStreamFallback(true);
+      }
+    };
+
     const messageStore = new Map();
     const state = {
       autoScroll: true,
@@ -2267,6 +2487,9 @@
     let pendingTwitch = false;
     let twitchUsername = null;
     let twitchToggleEnabled = true;
+    let queueViewMode = 'queue';
+    let streamChannel = null;
+    let streamEmbedReady = false;
     let authToken = sessionStorage.getItem(SESSION_STORAGE_KEY) || null;
     let pendingAuthAction = null;
     let authSuccessTimer = null;
@@ -2505,6 +2728,15 @@
     setLanguage(currentLang);
     primeEmptyQueue();
     loadChannelName();
+    setQueueView('queue');
+
+    [spotlightToggleBtn, streamToggleBtn].forEach((btn) => {
+      if (!btn) return;
+      btn.addEventListener('click', () => {
+        const target = btn.dataset.queueTarget || 'queue';
+        setQueueView(target);
+      });
+    });
 
     socket.addEventListener('message', (event) => {
       const payload = safeParse(event.data);
@@ -3227,12 +3459,14 @@
         if (name) {
           const clean = name.replace(/^#/, '');
           channelTitle.textContent = `${clean} Chat`;
+          updateStreamEmbed(clean);
           return;
         }
       } catch (err) {
         console.warn('Unable to load channel name', err);
       }
       channelTitle.textContent = 'channel Chat';
+      updateStreamEmbed(getStreamChannelFromTitle());
     }
 
     if (customForm && customTextArea) {
