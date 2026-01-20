@@ -2877,6 +2877,10 @@
       const message = upsertMessage(raw);
       if (!message || !chatTemplate || !chatStream) return;
 
+      const threshold = 32;
+      const shouldAutoScroll =
+        chatStream.scrollHeight - chatStream.scrollTop - chatStream.clientHeight < threshold;
+
       if (!allowDuplicate && chatStream.querySelector(`[data-message-id="${message.id}"]`)) {
         return;
       }
@@ -2902,7 +2906,7 @@
 
       trimChatMessages();
 
-      if (state.autoScroll) {
+      if (shouldAutoScroll || state.autoScroll) {
         chatStream.scrollTop = chatStream.scrollHeight;
       }
     }
