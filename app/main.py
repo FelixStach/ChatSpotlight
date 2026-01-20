@@ -228,6 +228,22 @@ def append_chat_log(payload: Dict[str, Any]) -> None:
         logging.warning("Failed to append chat log: %s", err)
 
 
+def write_chat_log_header(channel_label: str) -> None:
+    date_header = datetime.now(timezone.utc).date().isoformat()
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    CHAT_LOG_FILE.write_text(f"Channel: {channel_label}\nDate: {date_header}\n\n", encoding="utf-8")
+
+
+def reset_chat_state() -> None:
+    recent_messages.clear()
+    message_lookup.clear()
+    highlight_queue.clear()
+    logged_ids.clear()
+    logged_id_set.clear()
+    channel_label = (getattr(app.state, "channel_name", None) or CHANNEL_NAME or "unknown").strip() or "unknown"
+    write_chat_log_header(channel_label)
+
+
 def remember_message(payload: Dict[str, Any]) -> None:
     evicted: Optional[Dict[str, Any]] = None
     if recent_messages.maxlen and len(recent_messages) == recent_messages.maxlen:
@@ -668,7 +684,6 @@ async def fake_chat_loop() -> None:
 async def startup_event() -> None:
     global CHANNEL_NAME
     LOG_DIR.mkdir(parents=True, exist_ok=True)
-    date_header = datetime.now(timezone.utc).date().isoformat()
     load_admin_password()
     if USE_FAKE_STREAM:
         app.state.chat_task = asyncio.create_task(fake_chat_loop())
@@ -684,7 +699,7 @@ async def startup_event() -> None:
         mode = "twitch"
     app.state.channel_name = CHANNEL_NAME
     channel_label = CHANNEL_NAME or "unknown"
-    CHAT_LOG_FILE.write_text(f"Channel: {channel_label}\nDate: {date_header}\n\n", encoding="utf-8")
+    write_chat_log_header(channel_label)
     logging.info("Chat stream started in %s mode", mode)
 
 
@@ -782,3 +797,14 @@ async def custom_message(request: Request, body: Dict[str, Any] = Body(...)) -> 
     if twitch:
         await enqueue_twitch_message(text)
     return {"status": "ok", "id": payload["id"]}
+
+
+@app.post("/api/reset")
+async def reset_chat(request: Request) -> Dict[str, str]:
+    token = _extract_session_token(request)
+    if not _validate_session(token):
+        raise HTTPException(status_code=401, detail="Authentication required")
+    reset_chat_state()
+    await manager.broadcast({"type": "reset"})
+    await broadcast_queue()
+    return {"status": "ok"}

@@ -371,17 +371,23 @@
     .confirm-overlay {
       position: fixed;
       inset: 0;
-      display: none;
+      display: flex;
       align-items: center;
       justify-content: center;
       background: rgba(0, 0, 0, 0.55);
       backdrop-filter: blur(6px);
-      z-index: 20;
+      z-index: 29;
       padding: 1rem;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 180ms ease, visibility 180ms ease;
     }
 
     .confirm-overlay[data-open="true"] {
-      display: flex;
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
     }
 
     .confirm-card {
@@ -399,17 +405,23 @@
     .auth-overlay {
       position: fixed;
       inset: 0;
-      display: none;
+      display: flex;
       align-items: center;
       justify-content: center;
       background: rgba(0, 0, 0, 0.65);
       backdrop-filter: blur(8px);
       z-index: 30;
       padding: 1rem;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 180ms ease, visibility 180ms ease;
     }
 
     .auth-overlay[data-open="true"] {
-      display: flex;
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
     }
 
     .auth-card {
@@ -427,17 +439,23 @@
     .settings-overlay {
       position: fixed;
       inset: 0;
-      display: none;
+      display: flex;
       align-items: center;
       justify-content: center;
       background: rgba(0, 0, 0, 0.6);
       backdrop-filter: blur(7px);
       z-index: 28;
       padding: 1rem;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 180ms ease, visibility 180ms ease;
     }
 
     .settings-overlay[data-open="true"] {
-      display: flex;
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
     }
 
     .settings-card {
@@ -946,7 +964,8 @@
     }
 
     .btn-secondary,
-    .btn-primary {
+    .btn-primary,
+    .btn-danger {
       border: 1px solid var(--panel-border);
       background: rgba(255, 255, 255, 0.06);
       color: var(--text-primary);
@@ -957,13 +976,21 @@
       transition: background 140ms ease, border-color 140ms ease, transform 120ms ease;
     }
 
+    .settings-list .btn-secondary,
+    .settings-list .btn-danger {
+      padding: 0.55rem 0.95rem;
+      min-width: 46px;
+    }
+
     .btn-secondary:hover,
-    .btn-primary:hover {
+    .btn-primary:hover,
+    .btn-danger:hover {
       background: rgba(255, 255, 255, 0.12);
     }
 
     .btn-secondary:active,
-    .btn-primary:active {
+    .btn-primary:active,
+    .btn-danger:active {
       transform: translateY(1px);
     }
 
@@ -971,7 +998,6 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 0.55rem 0.8rem;
       gap: 0.35rem;
       line-height: 1;
     }
@@ -980,6 +1006,19 @@
       display: block;
       width: 18px;
       height: 18px;
+      fill: #fff;
+    }
+
+    #clear-cookies-status:empty {
+      display: none;
+    }
+
+    .settings-list .btn-secondary svg,
+    .settings-list .btn-danger svg {
+      display: block;
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
     }
 
     .setting-status {
@@ -996,6 +1035,24 @@
       border-color: rgba(88, 221, 161, 0.5);
       background: linear-gradient(135deg, rgba(88, 221, 161, 0.2), rgba(40, 70, 58, 0.6));
       color: #b3f2d8;
+    }
+
+    .btn-danger {
+      border-color: rgba(240, 99, 99, 0.55);
+      background: linear-gradient(135deg, rgba(240, 99, 99, 0.22), rgba(88, 22, 22, 0.7));
+      color: #ffd6d6;
+    }
+
+    .btn-danger:hover {
+      background: linear-gradient(135deg, rgba(240, 99, 99, 0.32), rgba(110, 26, 26, 0.78));
+      border-color: rgba(240, 99, 99, 0.75);
+    }
+
+    .btn-danger svg {
+      display: block;
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
     }
 
     .chat-header {
@@ -1847,6 +1904,24 @@
             <span id="clear-cookies-status" class="setting-status" aria-live="polite"></span>
           </button>
         </div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label" data-i18n="settings.reset.label">Reset</div>
+            <div class="setting-hint" data-i18n="settings.reset.hint">Clear all messages, spotlight queue, and the chat log.</div>
+          </div>
+          <button
+            type="button"
+            class="btn-danger"
+            id="reset-chat"
+            data-i18n="settings.reset.action"
+            data-i18n-attr="aria-label"
+            aria-label="Reset chat session"
+          >
+            <svg viewBox="0 0 1920 1920" aria-hidden="true" focusable="false">
+              <path d="M960 0v213.333c411.627 0 746.667 334.934 746.667 746.667S1371.627 1706.667 960 1706.667 213.333 1371.733 213.333 960c0-197.013 78.4-382.507 213.334-520.747v254.08H640V106.667H53.333V320h191.04C88.64 494.08 0 720.96 0 960c0 529.28 430.613 960 960 960s960-430.72 960-960S1489.387 0 960 0" fill-rule="evenodd" />
+            </svg>
+          </button>
+        </div>
       </div>
       <div class="settings-footer">
         <a
@@ -1864,6 +1939,23 @@
             />
           </svg>
         </a>
+      </div>
+    </div>
+  </div>
+
+  <div id="reset-confirm" class="confirm-overlay" role="dialog" aria-modal="true" aria-labelledby="reset-title">
+    <div class="confirm-card">
+      <div class="confirm-meta">
+        <span id="reset-role" aria-live="polite" data-i18n="settings.reset.meta">Admin action</span>
+        <span class="confirm-hint" data-i18n="settings.reset.hintShort">Esc to cancel</span>
+      </div>
+      <div class="confirm-title" id="reset-title" data-i18n="settings.reset.confirmTitle">Reset chat session?</div>
+      <div class="confirm-preview" data-i18n="settings.reset.confirmText">
+        This clears all messages, spotlight queue, and the chat log. This cannot be undone.
+      </div>
+      <div class="confirm-actions">
+        <button type="button" class="btn-secondary" id="reset-cancel" data-i18n="settings.reset.cancel">Cancel</button>
+        <button type="button" class="btn-danger" id="reset-confirm-btn" data-i18n="settings.reset.confirm">Reset now</button>
       </div>
     </div>
   </div>
@@ -1932,6 +2024,10 @@
     const settingsOverlay = document.querySelector('#settings-overlay');
     const settingsClose = document.querySelector('#settings-close');
     const downloadLogBtn = document.querySelector('#download-log');
+    const resetChatBtn = document.querySelector('#reset-chat');
+    const resetOverlay = document.querySelector('#reset-confirm');
+    const resetConfirmBtn = document.querySelector('#reset-confirm-btn');
+    const resetCancelBtn = document.querySelector('#reset-cancel');
     const clearCookiesBtn = document.querySelector('#clear-cookies');
     const clearCookiesLabel = clearCookiesBtn?.querySelector('.sr-only') || null;
     const clearCookiesStatus = document.querySelector('#clear-cookies-status');
@@ -1944,6 +2040,7 @@
     const apiChannelUrl = new URL('api/channel', baseUrl);
     const apiSessionUrl = new URL('api/session', baseUrl);
     const apiCustomMessageUrl = new URL('api/custom-message', baseUrl);
+    const apiResetUrl = new URL('api/reset', baseUrl);
     const wsUrl = new URL('ws/chat', baseUrl);
     wsUrl.protocol = wsUrl.protocol === 'https:' ? 'wss:' : 'ws:';
     const socket = new WebSocket(wsUrl);
@@ -1990,6 +2087,15 @@
         'settings.log.label': 'Chat log',
         'settings.log.hint': 'Download all messages since server start.',
         'settings.log.download': 'Download log',
+        'settings.reset.label': 'Reset',
+        'settings.reset.hint': 'Clear all messages, spotlight queue, and the chat log.',
+        'settings.reset.action': 'Reset',
+        'settings.reset.meta': 'Admin action',
+        'settings.reset.hintShort': 'Esc to cancel',
+        'settings.reset.confirmTitle': 'Reset chat session?',
+        'settings.reset.confirmText': 'This clears all messages, spotlight queue, and the chat log. This cannot be undone.',
+        'settings.reset.cancel': 'Cancel',
+        'settings.reset.confirm': 'Reset now',
         'settings.cookies.label': 'Cookies',
         'settings.cookies.hint': 'Delete all cookies stored by this app.',
         'settings.cookies.clear': 'Delete cookies',
@@ -2033,6 +2139,15 @@
         'settings.log.label': 'Chat-Log',
         'settings.log.hint': 'Alle Nachrichten seit Serverstart herunterladen.',
         'settings.log.download': 'Log herunterladen',
+        'settings.reset.label': 'Zurücksetzen',
+        'settings.reset.hint': 'Alle Nachrichten, Spotlight-Warteschlange und das Chat-Log löschen.',
+        'settings.reset.action': 'Zurücksetzen',
+        'settings.reset.meta': 'Admin-Aktion',
+        'settings.reset.hintShort': 'Esc zum Abbrechen',
+        'settings.reset.confirmTitle': 'Chat-Session zurücksetzen?',
+        'settings.reset.confirmText': 'Dies löscht alle Nachrichten, die Spotlight-Warteschlange und das Chat-Log. Das kann nicht rückgängig gemacht werden.',
+        'settings.reset.cancel': 'Abbrechen',
+        'settings.reset.confirm': 'Jetzt zurücksetzen',
         'settings.cookies.label': 'Cookies',
         'settings.cookies.hint': 'Alle von dieser App gespeicherten Cookies löschen.',
         'settings.cookies.clear': 'Cookies löschen',
@@ -2229,6 +2344,40 @@
       if (settingsClose) settingsClose.focus({ preventScroll: true });
     };
 
+    const closeResetConfirm = () => {
+      if (!resetOverlay) return;
+      resetOverlay.removeAttribute('data-open');
+    };
+
+    const openResetConfirm = () => {
+      if (!resetOverlay) return;
+      resetOverlay.setAttribute('data-open', 'true');
+      if (resetConfirmBtn) resetConfirmBtn.focus({ preventScroll: true });
+    };
+
+    const submitReset = async () => {
+      try {
+        const resp = await fetch(apiResetUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            [SESSION_HEADER]: authToken || '',
+          },
+        });
+        if (resp.status === 401 || resp.status === 403) {
+          setAuthToken(null);
+          openAuthModal(() => submitReset());
+          return;
+        }
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        handleResetPayload();
+        closeResetConfirm();
+        closeSettings();
+      } catch (err) {
+        console.error('Failed to reset chat', err);
+      }
+    };
+
     const updateTwitchToggle = (on, { suppressGuard = false } = {}) => {
       if (!suppressGuard && !twitchToggleEnabled) {
         pendingTwitch = false;
@@ -2363,6 +2512,11 @@
 
       if (payload.type === 'highlightQueue') {
         updateQueue(payload.items || []);
+        return;
+      }
+
+      if (payload.type === 'reset') {
+        handleResetPayload();
         return;
       }
 
@@ -2526,6 +2680,40 @@
         if (evt.key === 'Escape') {
           evt.preventDefault();
           closeSettings();
+        }
+      });
+    }
+
+    if (resetChatBtn) {
+      resetChatBtn.addEventListener('click', (evt) => {
+        evt.preventDefault();
+        ensureAuth(() => openResetConfirm());
+      });
+    }
+
+    if (resetConfirmBtn) {
+      resetConfirmBtn.addEventListener('click', (evt) => {
+        evt.preventDefault();
+        submitReset();
+      });
+    }
+
+    if (resetCancelBtn) {
+      resetCancelBtn.addEventListener('click', (evt) => {
+        evt.preventDefault();
+        closeResetConfirm();
+      });
+    }
+
+    if (resetOverlay) {
+      resetOverlay.addEventListener('click', (evt) => {
+        if (evt.target === resetOverlay) closeResetConfirm();
+      });
+      document.addEventListener('keydown', (evt) => {
+        if (resetOverlay.getAttribute('data-open') !== 'true') return;
+        if (evt.key === 'Escape') {
+          evt.preventDefault();
+          closeResetConfirm();
         }
       });
     }
@@ -3005,6 +3193,16 @@
       if (queueList && queueTemplate) {
         renderQueue(Array(TOTAL_QUEUE_SLOTS).fill(null));
       }
+    }
+
+    function handleResetPayload() {
+      messageStore.clear();
+      state.highlightedIds = new Set();
+      state.previousQueueIds = [];
+      state.pinnedId = null;
+      state.pendingRumbles.clear();
+      if (chatStream) chatStream.innerHTML = '';
+      primeEmptyQueue();
     }
 
     async function loadChannelName() {
