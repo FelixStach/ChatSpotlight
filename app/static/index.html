@@ -979,6 +979,15 @@
       transition: background 140ms ease, border-color 140ms ease, transform 120ms ease;
     }
 
+    button,
+    [role="button"],
+    a,
+    .role-option,
+    .chat-message,
+    .queue-item {
+      -webkit-tap-highlight-color: transparent;
+    }
+
     .settings-list .btn-secondary,
     .settings-list .btn-danger {
       padding: 0.55rem 0.95rem;
@@ -1361,10 +1370,20 @@
     .queue-view {
       height: 100%;
       min-height: 0;
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 200ms ease, transform 220ms ease;
+      pointer-events: none;
+      visibility: hidden;
     }
 
-    .queue-view[data-visible="false"] {
-      display: none;
+    .queue-view[data-visible="true"] {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+      visibility: visible;
     }
 
     .stream-shell {
