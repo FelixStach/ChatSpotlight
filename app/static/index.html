@@ -2419,7 +2419,7 @@
         <div class="setting-row">
           <div>
             <div class="setting-label" data-i18n="settings.reset.label">Reset</div>
-            <div class="setting-hint" data-i18n="settings.reset.hint">Clear all messages, spotlight queue, and the chat log.</div>
+            <div class="setting-hint" data-i18n="settings.reset.hint">Clear chat, spotlight and the chat log.</div>
           </div>
           <button
             type="button"
@@ -2617,7 +2617,7 @@
         'settings.overlay.hint': 'Open the stream overlay page.',
         'settings.overlay.open': 'Open overlay',
         'settings.reset.label': 'Reset',
-        'settings.reset.hint': 'Clear all messages, spotlight queue, and the chat log.',
+        'settings.reset.hint': 'Clear chat, spotlight and the chat log.',
         'settings.reset.action': 'Reset',
         'settings.reset.meta': 'Admin action',
         'settings.reset.hintShort': 'Esc to cancel',
@@ -2675,7 +2675,7 @@
         'settings.overlay.hint': 'Overlay-Seite für den Stream öffnen.',
         'settings.overlay.open': 'Overlay öffnen',
         'settings.reset.label': 'Zurücksetzen',
-        'settings.reset.hint': 'Alle Nachrichten, Spotlight-Warteschlange und das Chat-Log löschen.',
+        'settings.reset.hint': 'Chat, Spotlight und das Chat-Log löschen.',
         'settings.reset.action': 'Zurücksetzen',
         'settings.reset.meta': 'Admin-Aktion',
         'settings.reset.hintShort': 'Esc zum Abbrechen',
@@ -2826,6 +2826,10 @@
         setStreamFallback(true);
         return;
       }
+      if (queueViewMode !== 'stream') {
+        streamEmbedReady = false;
+        return;
+      }
       const nextUrl = buildTwitchEmbedUrl(streamChannel);
       if (streamFrame.getAttribute('src') !== nextUrl) {
         streamFrame.setAttribute('src', nextUrl);
@@ -2842,6 +2846,7 @@
       if (streamToggleBtn) streamToggleBtn.setAttribute('aria-pressed', queueViewMode === 'stream' ? 'true' : 'false');
       if (queueViewMode === 'stream') {
         if (!streamChannel) updateStreamEmbed(getStreamChannelFromTitle());
+        if (streamChannel && !streamEmbedReady) updateStreamEmbed(streamChannel);
         if (!streamChannel) setStreamFallback(true);
       }
     };
