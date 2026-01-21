@@ -505,9 +505,7 @@
       max-height: 90vh;
       max-height: 90svh;
       max-height: 90dvh;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-      overscroll-behavior: contain;
+      overflow: hidden;
     }
 
     .settings-head {
@@ -534,6 +532,12 @@
       display: flex;
       flex-direction: column;
       gap: 0.9rem;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+      padding-left: 0.85rem;
+      padding-right: 0.85rem;
+      scrollbar-gutter: stable;
     }
 
     .setting-row {
@@ -1763,6 +1767,9 @@
       border: 1px solid var(--q-border);
       padding: clamp(1.25rem, 1.4vw, 1.75rem);
       background: var(--q-bg);
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
       min-height: 0;
       height: 100%;
       cursor: pointer;
@@ -1963,6 +1970,8 @@
       overflow: hidden;
       margin: 0;
       text-align: left;
+      max-width: 100%;
+      overflow-wrap: anywhere;
       word-break: break-word;
     }
 
