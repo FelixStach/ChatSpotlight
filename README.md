@@ -15,7 +15,7 @@ A FastAPI + WebSocket service that ingests a Twitch channel and drives a shared,
 - Fake chat generator switch for offline demos.
 
 ## IMPORTANT NOTICE
-This app loads fonts from Google Fonts, connects to Twitch services, and sets cookies. There is no consent banner provided. If you deploy this app, you must implement your own consent/notice flow and ensure compliance with applicable privacy and cookie regulations.
+This app loads fonts from Google Fonts, connects to Twitch services, and sets cookies. A consent banner is now included for these external sources and cookies. It is provided in good faith and with best interest in mind, but it is not legal advice, has not been reviewed or approved by a lawyer, and the original creators cannot be held accountable for any legal issues or compliance outcomes.
 
 ## Quick Start
 1. **Python environment**
