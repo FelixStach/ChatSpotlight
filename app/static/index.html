@@ -1795,7 +1795,7 @@
       pointer-events: none;
     }
 
-    .queue-item:not(.queue-item--empty):not(.queue-item--highlighted) {
+    .queue-item:not(.queue-item--empty):not(.queue-item--highlighted):not(.queue-item--custom) {
       --q-border: rgba(255, 255, 255, 0.18);
       --q-shadow: 0 10px 20px rgba(0, 0, 0, 0.28);
       --q-bg:
@@ -1812,9 +1812,9 @@
       --q-border: rgba(248, 212, 119, 0.85);
       --q-shadow: 0 10px 24px rgba(248, 212, 119, 0.22);
       --q-bg:
-        radial-gradient(circle at 16% 22%, rgba(214, 176, 96, 0.24), rgba(214, 176, 96, 0) 88%),
-        radial-gradient(circle at 92% 78%, rgba(214, 176, 96, 0.1), rgba(214, 176, 96, 0) 90%),
-        linear-gradient(135deg, rgba(214, 176, 96, 0.18), rgba(88, 48, 12, 0.4));
+        radial-gradient(circle at 16% 22%, rgba(214, 176, 96, 0.16), rgba(214, 176, 96, 0) 88%),
+        radial-gradient(circle at 92% 78%, rgba(214, 176, 96, 0.06), rgba(214, 176, 96, 0) 92%),
+        linear-gradient(135deg, rgba(214, 176, 96, 0.12), rgba(88, 48, 12, 0.46));
     }
 
     .queue-item--custom {
@@ -1835,12 +1835,12 @@
     }
 
     .queue-item--custom.queue-item--pinned {
-      --q-border: rgba(255, 158, 94, 0.95);
-      --q-shadow: 0 12px 30px rgba(255, 158, 94, 0.28);
+      --q-border: rgba(255, 105, 97, 0.95);
+      --q-shadow: 0 12px 30px rgba(255, 105, 97, 0.28);
       --q-bg:
-        radial-gradient(circle at 18% 22%, rgba(255, 158, 94, 0.18), rgba(255, 158, 94, 0) 78%),
-        radial-gradient(circle at 90% 80%, rgba(255, 158, 94, 0.1), rgba(255, 158, 94, 0) 82%),
-        linear-gradient(315deg, rgba(255, 158, 94, 0.2), rgba(60, 28, 18, 0.44));
+        radial-gradient(circle at 16% 22%, rgba(255, 105, 97, 0.3), rgba(255, 105, 97, 0) 78%),
+        radial-gradient(circle at 90% 80%, rgba(255, 105, 97, 0.14), rgba(255, 105, 97, 0) 82%),
+        linear-gradient(135deg, rgba(255, 105, 97, 0.22), rgba(86, 28, 28, 0.44));
     }
 
     .queue-item--pinned {
@@ -1850,15 +1850,6 @@
         radial-gradient(circle at 16% 22%, rgba(255, 105, 97, 0.3), rgba(255, 105, 97, 0) 78%),
         radial-gradient(circle at 90% 80%, rgba(255, 105, 97, 0.14), rgba(255, 105, 97, 0) 82%),
         linear-gradient(135deg, rgba(255, 105, 97, 0.22), rgba(86, 28, 28, 0.44));
-    }
-
-    .queue-item--custom.queue-item--pinned {
-      --q-border: rgba(255, 165, 111, 0.95);
-      --q-shadow: 0 14px 34px rgba(255, 165, 111, 0.3);
-      --q-bg:
-        radial-gradient(circle at 16% 22%, rgba(255, 187, 133, 0.36), rgba(255, 187, 133, 0) 78%),
-        radial-gradient(circle at 90% 80%, rgba(255, 187, 133, 0.16), rgba(255, 187, 133, 0) 82%),
-        linear-gradient(135deg, rgba(255, 187, 133, 0.3), rgba(96, 46, 26, 0.48));
     }
 
     .queue-meta {
