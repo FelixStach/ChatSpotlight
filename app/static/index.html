@@ -5,10 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Chat Spotlight</title>
 
-  <!-- Google Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+  <!-- External fonts are loaded after consent -->
 
   <!-- Inlined CSS -->
   <style>
@@ -1067,6 +1064,7 @@
     .settings-card button,
     .confirm-card button,
     .auth-card button,
+    .consent-banner button,
     .settings-card a.btn-secondary,
     .confirm-card a.btn-secondary,
     .auth-card a.btn-secondary {
@@ -1078,6 +1076,7 @@
     .settings-card button::after,
     .confirm-card button::after,
     .auth-card button::after,
+    .consent-banner button::after,
     .settings-card a.btn-secondary::after,
     .confirm-card a.btn-secondary::after,
     .auth-card a.btn-secondary::after {
@@ -1098,6 +1097,7 @@
     .settings-card button:hover::after,
     .confirm-card button:hover::after,
     .auth-card button:hover::after,
+    .consent-banner button:hover::after,
     .settings-card a.btn-secondary:hover::after,
     .confirm-card a.btn-secondary:hover::after,
     .auth-card a.btn-secondary:hover::after {
@@ -1196,11 +1196,12 @@
 
     .settings-card .btn-secondary,
     .confirm-card .btn-secondary,
-    .auth-card .btn-secondary {
+    .auth-card .btn-secondary,
+    .consent-banner .btn-secondary {
       background:
-        radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0) 48%),
-        radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0) 50%),
-        linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.03));
+        radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0) 50%),
+        radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0) 52%),
+        linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
       background-size: 200% 200%;
       animation: spotlightFlow 12s ease-in-out infinite;
       filter: saturate(1.04);
@@ -1209,6 +1210,7 @@
     .settings-card .btn-primary,
     .confirm-card .btn-primary,
     .auth-card .btn-primary,
+    .consent-banner .btn-primary,
     .settings-card .btn-danger,
     .confirm-card .btn-danger,
     .auth-card .btn-danger {
@@ -1219,7 +1221,8 @@
 
     .settings-card .btn-primary,
     .confirm-card .btn-primary,
-    .auth-card .btn-primary {
+    .auth-card .btn-primary,
+    .consent-banner .btn-primary {
       background:
         radial-gradient(circle at 18% 25%, rgba(144, 255, 208, 0.16), rgba(144, 255, 208, 0) 48%),
         radial-gradient(circle at 86% 18%, rgba(88, 221, 161, 0.12), rgba(88, 221, 161, 0) 52%),
@@ -1314,7 +1317,8 @@
       display: flex;
       flex-direction: column;
       gap: 1rem;
-      padding-right: 0.4rem;
+      padding-right: 1rem;
+      padding-bottom: 0.5rem;
       flex: 1;
       min-height: 0;
     }
@@ -1350,15 +1354,16 @@
       gap: 0.35rem;
       padding: 1rem 1.1rem;
       border-radius: 18px;
-      border: 1px solid transparent;
+      border: 1px solid rgba(255, 255, 255, 0.16);
       background:
-        radial-gradient(circle at 12% 20%, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0) 70%),
-        radial-gradient(circle at 90% 80%, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0) 75%),
-        linear-gradient(315deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
-      background-size: 160% 160%;
+        radial-gradient(circle at 16% 22%, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0) 66%),
+        radial-gradient(circle at 90% 80%, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0) 82%),
+        linear-gradient(135deg, rgba(255, 255, 255, 0.03), rgba(4, 6, 16, 0.72));
+      background-size: 180% 180%;
       background-position: 0% 0%;
+      box-shadow: 0 12px 26px rgba(0, 0, 0, 0.32);
       cursor: pointer;
-      transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
+      transition: transform 140ms ease, border-color 140ms ease, background 140ms ease, box-shadow 180ms ease;
     }
 
     @keyframes chat-pulse-ring {
@@ -1391,9 +1396,9 @@
     .chat-message--fresh {
       border-color: rgba(248, 212, 119, 0.7);
       background:
-        radial-gradient(circle at 18% 22%, rgba(248, 212, 119, 0.18), rgba(248, 212, 119, 0) 72%),
-        radial-gradient(circle at 90% 80%, rgba(248, 212, 119, 0.08), rgba(248, 212, 119, 0) 78%),
-        linear-gradient(315deg, rgba(248, 212, 119, 0.12), rgba(88, 48, 12, 0.28));
+        radial-gradient(circle at 18% 22%, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0) 72%),
+        radial-gradient(circle at 90% 80%, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0) 78%),
+        linear-gradient(315deg, rgba(255, 255, 255, 0.04), rgba(6, 8, 18, 0.52));
       background-size: 160% 160%;
       animation: chat-pulse-ring 0.65s ease-out 0s 2;
     }
@@ -1406,12 +1411,13 @@
 
     .chat-message:hover {
       transform: translateY(-2px);
-      border-color: var(--accent-soft);
+      border-color: rgba(255, 255, 255, 0.28);
       background:
-        radial-gradient(circle at 12% 20%, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0) 72%),
-        radial-gradient(circle at 90% 80%, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0) 78%),
-        linear-gradient(315deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
-      background-size: 160% 160%;
+        radial-gradient(circle at 16% 22%, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0) 68%),
+        radial-gradient(circle at 90% 80%, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0) 84%),
+        linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(3, 4, 12, 0.78));
+      background-size: 180% 180%;
+      box-shadow: 0 16px 30px rgba(0, 0, 0, 0.36);
     }
 
     .chat-message--custom {
@@ -1769,9 +1775,32 @@
 
     .queue-item--empty {
       border-style: dashed;
-      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.16);
+      background:
+        radial-gradient(circle at 18% 22%, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0) 62%),
+        linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(10, 12, 28, 0.22)),
+        repeating-linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.03) 0px,
+          rgba(255, 255, 255, 0.03) 8px,
+          rgba(255, 255, 255, 0.008) 8px,
+          rgba(255, 255, 255, 0.008) 22px
+        );
+      box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+        0 8px 16px rgba(0, 0, 0, 0.28);
+      opacity: 0.75;
+      filter: saturate(0.7);
       cursor: default;
       pointer-events: none;
+    }
+
+    .queue-item:not(.queue-item--empty):not(.queue-item--highlighted) {
+      --q-border: rgba(255, 255, 255, 0.18);
+      --q-shadow: 0 10px 20px rgba(0, 0, 0, 0.28);
+      --q-bg:
+        radial-gradient(circle at 18% 22%, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0) 62%),
+        linear-gradient(135deg, rgba(255, 255, 255, 0.065), rgba(12, 16, 36, 0.38));
     }
 
     .queue-item--empty .queue-meta,
@@ -1783,9 +1812,9 @@
       --q-border: rgba(248, 212, 119, 0.85);
       --q-shadow: 0 10px 24px rgba(248, 212, 119, 0.22);
       --q-bg:
-        radial-gradient(circle at 16% 22%, rgba(248, 212, 119, 0.28), rgba(248, 212, 119, 0) 78%),
-        radial-gradient(circle at 90% 80%, rgba(248, 212, 119, 0.12), rgba(248, 212, 119, 0) 82%),
-        linear-gradient(135deg, rgba(248, 212, 119, 0.22), rgba(88, 48, 12, 0.4));
+        radial-gradient(circle at 16% 22%, rgba(214, 176, 96, 0.24), rgba(214, 176, 96, 0) 88%),
+        radial-gradient(circle at 92% 78%, rgba(214, 176, 96, 0.1), rgba(214, 176, 96, 0) 90%),
+        linear-gradient(135deg, rgba(214, 176, 96, 0.18), rgba(88, 48, 12, 0.4));
     }
 
     .queue-item--custom {
@@ -2004,6 +2033,59 @@
       }
     }
 
+    .consent-banner {
+      position: fixed;
+      left: clamp(1rem, 2vw, 2rem);
+      right: clamp(1rem, 2vw, 2rem);
+      bottom: clamp(1rem, 2vw, 2rem);
+      z-index: 35;
+      background: rgba(10, 12, 28, 0.92);
+      border: 1px solid var(--panel-border);
+      border-radius: 20px;
+      padding: 1rem 1.25rem;
+      box-shadow: var(--shadow-soft);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+      opacity: 0;
+      transform: translateY(16px);
+      pointer-events: none;
+      transition: opacity 200ms ease, transform 200ms ease;
+    }
+
+    .consent-banner[data-open="true"] {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .consent-content {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      min-width: min(480px, 100%);
+      max-width: 880px;
+    }
+
+    .consent-title {
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    .consent-text {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.45;
+    }
+
+    .consent-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+    }
+
     @media (prefers-reduced-motion: reduce) {
       .queue-item--rumble {
         animation: none;
@@ -2071,6 +2153,10 @@
     }
 
     @media (max-width: 640px) {
+      #chat-stream {
+        padding-right: 0.35rem;
+      }
+
       .chat-row {
         flex-direction: column;
         gap: 0.2rem;
@@ -2160,7 +2246,7 @@
 
     <section class="panel chat-panel">
       <div class="chat-header" aria-live="polite">
-        <h2 id="channel-name" class="chat-title">Loading channel Chat…</h2>
+        <h2 id="channel-name" class="chat-title">Loading channel…</h2>
       </div>
       <ul id="chat-stream" aria-live="polite" aria-label="Twitch chat messages"></ul>
       <form id="custom-message-form" class="custom-form" autocomplete="off">
@@ -2503,6 +2589,19 @@
     </div>
   </div>
 
+  <div id="consent-banner" class="consent-banner" role="dialog" aria-live="polite" aria-label="Privacy notice">
+    <div class="consent-content">
+      <div class="consent-title" data-i18n="consent.title">Privacy notice</div>
+      <div class="consent-text" data-i18n="consent.text">
+        This app loads external resources. Cookies/session storage are only stored after you accept. Accept to load external content.
+      </div>
+    </div>
+    <div class="consent-actions">
+      <button type="button" class="btn-secondary" id="consent-decline" data-i18n="consent.decline">Decline</button>
+      <button type="button" class="btn-primary" id="consent-accept" data-i18n="consent.accept">Accept</button>
+    </div>
+  </div>
+
   <!-- Inlined JS -->
   <script type="module">
     // Canonical store, robust timestamp parsing, and publish-time age display
@@ -2554,10 +2653,14 @@
     const languageOptions = Array.from(document.querySelectorAll('.language-option'));
     const languageLabel = document.querySelector('#language-label');
     const overlayLink = document.querySelector('#overlay-link');
+    const consentBanner = document.querySelector('#consent-banner');
+    const consentAcceptBtn = document.querySelector('#consent-accept');
+    const consentDeclineBtn = document.querySelector('#consent-decline');
 
     const baseUrl = new URL('.', window.location.href);
     const apiChannelUrl = new URL('api/channel', baseUrl);
     const apiSessionUrl = new URL('api/session', baseUrl);
+    const apiSessionClearUrl = new URL('api/session/clear', baseUrl);
     const apiCustomMessageUrl = new URL('api/custom-message', baseUrl);
     const apiResetUrl = new URL('api/reset', baseUrl);
     const wsUrl = new URL('ws/chat', baseUrl);
@@ -2577,6 +2680,11 @@
     const SESSION_HEADER = 'X-Session-Token';
     const LANGUAGE_STORAGE_KEY = 'chatspotlight-lang';
     const DEFAULT_LANG = 'de';
+    const CONSENT_STORAGE_KEY = 'chatspotlight-consent';
+    const CONSENT_ACCEPTED = 'accepted';
+    const CONSENT_DECLINED = 'declined';
+    const EXTERNAL_FONT_URL =
+      'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap';
 
     const translations = {
       en: {
@@ -2591,6 +2699,7 @@
         'actions.twitch': 'Also send to Twitch',
         'queue.stream': 'Stream',
         'queue.streamHint': 'Stream loads once the channel is ready.',
+        'queue.streamConsent': 'Enable external content to load the Twitch player.',
         'auth.title': 'Moderator access required',
         'auth.subtitle': 'Enter the password to spotlight, pin, or send messages.',
         'auth.password': 'Password',
@@ -2631,6 +2740,11 @@
         'settings.cookies.cleared': 'Cookies cleared',
         'settings.cookies.error': 'Unable to delete cookies',
         'settings.github.link': 'View project on GitHub',
+        'consent.title': 'Privacy notice',
+        'consent.text':
+          'This app loads external resources (Google Fonts, Twitch player, and Twitch CDN for emotes). Cookies/session storage are only stored after you accept. Accept to load external content.',
+        'consent.accept': 'Accept',
+        'consent.decline': 'Decline',
         'lang.option.de': 'German',
         'lang.option.en': 'English',
         'twitch.tooltip.known': 'Send as {username}',
@@ -2649,6 +2763,7 @@
         'actions.twitch': 'Auch an Twitch senden',
         'queue.stream': 'Stream',
         'queue.streamHint': 'Der Stream lädt, sobald der Kanal bereit ist.',
+        'queue.streamConsent': 'Externe Inhalte aktivieren, um den Twitch-Player zu laden.',
         'auth.title': 'Moderatorzugang erforderlich',
         'auth.subtitle': 'Gib das Passwort ein, um Nachrichten zu spotlighten, zu pinnen oder zu senden.',
         'auth.password': 'Passwort',
@@ -2689,6 +2804,11 @@
         'settings.cookies.cleared': 'Cookies gelöscht',
         'settings.cookies.error': 'Cookies konnten nicht gelöscht werden',
         'settings.github.link': 'Projekt auf GitHub ansehen',
+        'consent.title': 'Datenschutzhinweis',
+        'consent.text':
+          'Diese App lädt externe Ressourcen (Google Fonts, Twitch-Player und Twitch-CDN für Emotes). Cookies/Session-Speicher werden erst nach deiner Zustimmung gespeichert. Zustimmung erforderlich, um externe Inhalte zu laden.',
+        'consent.accept': 'Akzeptieren',
+        'consent.decline': 'Ablehnen',
         'lang.option.de': 'Deutsch',
         'lang.option.en': 'Englisch',
         'twitch.tooltip.known': 'Als {username} senden',
@@ -2737,7 +2857,9 @@
     const setLanguage = (lang) => {
       const next = translations[lang] ? lang : 'en';
       currentLang = next;
-      localStorage.setItem(LANGUAGE_STORAGE_KEY, currentLang);
+      if (externalConsent) {
+        localStorage.setItem(LANGUAGE_STORAGE_KEY, currentLang);
+      }
       applyTranslations();
       updateLanguageLabel();
       updateLanguageMenuState(false);
@@ -2787,6 +2909,71 @@
       }
     };
 
+    let externalConsent = false;
+
+    const loadExternalFonts = () => {
+      if (document.querySelector('#external-fonts')) return;
+      const preconnectGoogle = document.createElement('link');
+      preconnectGoogle.rel = 'preconnect';
+      preconnectGoogle.href = 'https://fonts.googleapis.com';
+      const preconnectGstatic = document.createElement('link');
+      preconnectGstatic.rel = 'preconnect';
+      preconnectGstatic.href = 'https://fonts.gstatic.com';
+      preconnectGstatic.crossOrigin = 'anonymous';
+      const stylesheet = document.createElement('link');
+      stylesheet.id = 'external-fonts';
+      stylesheet.rel = 'stylesheet';
+      stylesheet.href = EXTERNAL_FONT_URL;
+      document.head.append(preconnectGoogle, preconnectGstatic, stylesheet);
+    };
+
+    const setStreamFallbackCopy = (key) => {
+      if (!streamFallback) return;
+      streamFallback.dataset.i18n = key;
+      streamFallback.textContent = t(key);
+    };
+
+    const clearServerSessionCookie = async () => {
+      try {
+        await fetch(apiSessionClearUrl, { method: 'POST', credentials: 'same-origin' });
+      } catch (err) {
+        console.warn('Failed to clear server session cookie', err);
+      }
+    };
+
+    const applyConsentState = (value, { persist = true } = {}) => {
+      externalConsent = value === CONSENT_ACCEPTED;
+      if (externalConsent) {
+        if (persist) {
+          localStorage.setItem(CONSENT_STORAGE_KEY, value);
+          localStorage.setItem(LANGUAGE_STORAGE_KEY, currentLang);
+        }
+        if (authToken) sessionStorage.setItem(SESSION_STORAGE_KEY, authToken);
+        loadExternalFonts();
+        setStreamFallbackCopy('queue.streamHint');
+      } else {
+        localStorage.removeItem(CONSENT_STORAGE_KEY);
+        localStorage.removeItem(LANGUAGE_STORAGE_KEY);
+        sessionStorage.removeItem(SESSION_STORAGE_KEY);
+        authToken = null;
+        if (streamFrame) streamFrame.removeAttribute('src');
+        streamEmbedReady = false;
+        setStreamFallbackCopy('queue.streamConsent');
+        setStreamFallback(true);
+      }
+    };
+
+    const initConsent = () => {
+      const stored = localStorage.getItem(CONSENT_STORAGE_KEY);
+      if (stored === CONSENT_ACCEPTED) {
+        applyConsentState(stored, { persist: false });
+        if (consentBanner) consentBanner.removeAttribute('data-open');
+      } else {
+        applyConsentState(CONSENT_DECLINED, { persist: false });
+        if (consentBanner) consentBanner.setAttribute('data-open', 'true');
+      }
+    };
+
     const getStreamChannelFromTitle = () => {
       const raw = (channelTitle?.textContent || '').toString();
       const clean = raw.replace(/\s*chat\s*$/i, '').trim().replace(/^#/, '');
@@ -2823,6 +3010,13 @@
       if (!streamChannel) {
         streamFrame.removeAttribute('src');
         streamEmbedReady = false;
+        setStreamFallback(true);
+        return;
+      }
+      if (!externalConsent) {
+        streamFrame.removeAttribute('src');
+        streamEmbedReady = false;
+        setStreamFallbackCopy('queue.streamConsent');
         setStreamFallback(true);
         return;
       }
@@ -2876,7 +3070,7 @@
 
     const setAuthToken = (token) => {
       authToken = token || null;
-      if (authToken) {
+      if (authToken && externalConsent) {
         sessionStorage.setItem(SESSION_STORAGE_KEY, authToken);
       } else {
         sessionStorage.removeItem(SESSION_STORAGE_KEY);
@@ -3096,7 +3290,13 @@
     const handleClearCookies = () => {
       try {
         clearAllCookies();
+        localStorage.removeItem(CONSENT_STORAGE_KEY);
+        localStorage.removeItem(LANGUAGE_STORAGE_KEY);
         setAuthToken(null); // also drop any in-memory/session-stored moderator token
+        sessionStorage.removeItem(SESSION_STORAGE_KEY);
+        applyConsentState(CONSENT_DECLINED, { persist: false });
+        clearServerSessionCookie();
+        if (consentBanner) consentBanner.setAttribute('data-open', 'true');
         flashCookieState('settings.cookies.cleared');
       } catch (err) {
         console.error('Failed to clear cookies', err);
@@ -3105,6 +3305,7 @@
     };
 
     setLanguage(currentLang);
+    initConsent();
     primeEmptyQueue();
     loadChannelName();
     setQueueView('queue');
@@ -3186,8 +3387,11 @@
         try {
           const resp = await fetch(apiSessionUrl, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ password }),
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Consent': externalConsent ? 'accepted' : 'declined',
+            },
+            body: JSON.stringify({ password, consent: externalConsent }),
           });
           if (!resp.ok) {
             throw new Error(`HTTP ${resp.status}`);
@@ -3335,6 +3539,28 @@
       });
     }
 
+    if (consentAcceptBtn) {
+      consentAcceptBtn.addEventListener('click', () => {
+        applyConsentState(CONSENT_ACCEPTED);
+        if (consentBanner) consentBanner.removeAttribute('data-open');
+        if (queueViewMode === 'stream') {
+          updateStreamEmbed(streamChannel || getStreamChannelFromTitle());
+        }
+        refreshRenderedEmotes();
+      });
+    }
+
+    if (consentDeclineBtn) {
+      consentDeclineBtn.addEventListener('click', () => {
+        const wasAccepted = externalConsent || localStorage.getItem(CONSENT_STORAGE_KEY) === CONSENT_ACCEPTED;
+        applyConsentState(CONSENT_DECLINED);
+        if (wasAccepted) {
+          clearServerSessionCookie();
+        }
+        if (consentBanner) consentBanner.removeAttribute('data-open');
+      });
+    }
+
     function safeParse(raw) {
       try {
         return JSON.parse(raw);
@@ -3431,6 +3657,10 @@
       container.textContent = '';
 
       if (!text) return;
+      if (!externalConsent) {
+        container.textContent = text;
+        return;
+      }
       if (!emotes.length) {
         container.textContent = text;
         return;
@@ -3484,6 +3714,26 @@
         container.appendChild(document.createTextNode(text.slice(cursor)));
       }
     }
+
+    const refreshRenderedEmotes = () => {
+      if (!externalConsent) return;
+      if (chatStream) {
+        chatStream.querySelectorAll('.chat-message[data-message-id]').forEach((node) => {
+          const messageId = node.dataset.messageId;
+          const message = messageStore.get(messageId);
+          const textEl = node.querySelector('.text');
+          if (message && textEl) renderTextWithEmotes(textEl, message, { variant: 'chat' });
+        });
+      }
+      if (queueList) {
+        queueList.querySelectorAll('.queue-item[data-message-id]').forEach((node) => {
+          const messageId = node.dataset.messageId;
+          const message = messageStore.get(messageId);
+          const textEl = node.querySelector('.queue-text');
+          if (message && textEl) renderTextWithEmotes(textEl, message, { variant: 'queue' });
+        });
+      }
+    };
 
     function addChatMessage(raw, { allowDuplicate = true, pulse = true } = {}) {
       const message = upsertMessage(raw);
@@ -3838,14 +4088,14 @@
         updateTwitchTooltip();
         if (name) {
           const clean = name.replace(/^#/, '');
-          channelTitle.textContent = `${clean} Chat`;
+          channelTitle.textContent = clean;
           updateStreamEmbed(clean);
           return;
         }
       } catch (err) {
         console.warn('Unable to load channel name', err);
       }
-      channelTitle.textContent = 'channel Chat';
+      channelTitle.textContent = 'channel';
       updateStreamEmbed(getStreamChannelFromTitle());
     }
 

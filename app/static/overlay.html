@@ -4,9 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Chat Spotlight Overlay</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Audiowide&family=Press+Start+2P&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+  <!-- External fonts are loaded after consent -->
   <style>
     :root {
       --bg: #03050d;
@@ -281,6 +279,85 @@
       backdrop-filter: blur(8px);
     }
 
+    .consent-banner {
+      position: fixed;
+      left: 16px;
+      right: 16px;
+      bottom: 16px;
+      z-index: 40;
+      background: rgba(6, 8, 20, 0.92);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 16px;
+      padding: 0.85rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.8rem;
+      flex-wrap: wrap;
+      opacity: 0;
+      transform: translateY(12px);
+      pointer-events: none;
+      transition: opacity 200ms ease, transform 200ms ease;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+    }
+
+    .consent-banner[data-open="true"] {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .consent-content {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      max-width: 740px;
+      color: var(--text);
+      font-family: 'Rajdhani', 'Space Grotesk', system-ui, sans-serif;
+    }
+
+    .consent-title {
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    .consent-text {
+      font-size: 0.95rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .consent-actions {
+      display: inline-flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .consent-btn {
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 0.45rem 0.85rem;
+      font-family: 'Rajdhani', 'Space Grotesk', system-ui, sans-serif;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 140ms ease, transform 140ms ease;
+    }
+
+    .consent-btn--primary {
+      background: linear-gradient(135deg, rgba(83, 240, 255, 0.22), rgba(255, 59, 125, 0.12));
+      border-color: rgba(83, 240, 255, 0.5);
+    }
+
+    .consent-btn:hover {
+      background: rgba(255, 255, 255, 0.14);
+    }
+
+    .consent-btn:active {
+      transform: translateY(1px);
+    }
+
     @keyframes pulse {
       0% { transform: scale(0.95); opacity: 0.8; }
       50% { transform: scale(1.05); opacity: 1; }
@@ -341,17 +418,53 @@
     </div>
   </div>
   <div class="status-bar" id="status">Connecting…</div>
+  <div id="consent-banner" class="consent-banner" role="dialog" aria-live="polite" aria-label="Privacy notice">
+    <div class="consent-content">
+      <div class="consent-title" id="consent-title">Privacy notice</div>
+      <div class="consent-text" id="consent-text">
+        This overlay loads external fonts. Accept to load them.
+      </div>
+    </div>
+    <div class="consent-actions">
+      <button type="button" class="consent-btn" id="consent-decline">Decline</button>
+      <button type="button" class="consent-btn consent-btn--primary" id="consent-accept">Accept</button>
+    </div>
+  </div>
 
   <script>
     const LANGUAGE_STORAGE_KEY = 'chatspotlight-lang';
+    const CONSENT_STORAGE_KEY = 'chatspotlight-consent';
+    const CONSENT_ACCEPTED = 'accepted';
+    const CONSENT_DECLINED = 'declined';
+    const EXTERNAL_FONT_URL =
+      'https://fonts.googleapis.com/css2?family=Audiowide&family=Press+Start+2P&family=Rajdhani:wght@500;600;700&display=swap';
 
     const messageEl = document.querySelector('#message');
     const statusEl = document.querySelector('#status');
     const badgeEl = document.querySelector('.badge');
     const cardEl = document.querySelector('.card');
+    const consentBanner = document.querySelector('#consent-banner');
+    const consentTitle = document.querySelector('#consent-title');
+    const consentText = document.querySelector('#consent-text');
+    const consentAcceptBtn = document.querySelector('#consent-accept');
+    const consentDeclineBtn = document.querySelector('#consent-decline');
     const translations = {
-      en: { badge: 'NEW COMMENT!', empty: '- No comments yet -' },
-      de: { badge: 'NEUER KOMMENTAR!', empty: '- Noch keine Kommentare -' },
+      en: {
+        badge: 'NEW COMMENT!',
+        empty: '- No comments yet -',
+        consentTitle: 'Privacy notice',
+        consentText: 'This overlay loads Google Fonts and connects to the app via WebSocket. No cookies are set here.',
+        consentAccept: 'Accept',
+        consentDecline: 'Decline',
+      },
+      de: {
+        badge: 'NEUER KOMMENTAR!',
+        empty: '- Noch keine Kommentare -',
+        consentTitle: 'Datenschutzhinweis',
+        consentText: 'Dieses Overlay lädt Google Fonts und verbindet sich per WebSocket mit der App. Hier werden keine Cookies gesetzt.',
+        consentAccept: 'Akzeptieren',
+        consentDecline: 'Ablehnen',
+      },
     };
 
     let currentLang = localStorage.getItem(LANGUAGE_STORAGE_KEY) || 'de';
@@ -368,6 +481,10 @@
       if (messageEl && messageEl.dataset.empty === 'true') {
         messageEl.textContent = t('empty');
       }
+      if (consentTitle) consentTitle.textContent = t('consentTitle');
+      if (consentText) consentText.textContent = t('consentText');
+      if (consentAcceptBtn) consentAcceptBtn.textContent = t('consentAccept');
+      if (consentDeclineBtn) consentDeclineBtn.textContent = t('consentDecline');
     };
 
     // update when main page changes language
@@ -377,6 +494,57 @@
         applyLanguage();
       }
     });
+
+    let externalConsent = false;
+
+    const loadExternalFonts = () => {
+      if (document.querySelector('#external-fonts')) return;
+      const preconnectGoogle = document.createElement('link');
+      preconnectGoogle.rel = 'preconnect';
+      preconnectGoogle.href = 'https://fonts.googleapis.com';
+      const preconnectGstatic = document.createElement('link');
+      preconnectGstatic.rel = 'preconnect';
+      preconnectGstatic.href = 'https://fonts.gstatic.com';
+      preconnectGstatic.crossOrigin = 'anonymous';
+      const stylesheet = document.createElement('link');
+      stylesheet.id = 'external-fonts';
+      stylesheet.rel = 'stylesheet';
+      stylesheet.href = EXTERNAL_FONT_URL;
+      document.head.append(preconnectGoogle, preconnectGstatic, stylesheet);
+    };
+
+    const applyConsentState = (value, { persist = true } = {}) => {
+      externalConsent = value === CONSENT_ACCEPTED;
+      if (persist && value) localStorage.setItem(CONSENT_STORAGE_KEY, value);
+      if (externalConsent) {
+        loadExternalFonts();
+      }
+    };
+
+    const initConsent = () => {
+      const stored = localStorage.getItem(CONSENT_STORAGE_KEY);
+      if (stored === CONSENT_ACCEPTED || stored === CONSENT_DECLINED) {
+        applyConsentState(stored, { persist: false });
+        if (consentBanner) consentBanner.removeAttribute('data-open');
+      } else {
+        applyConsentState(CONSENT_DECLINED, { persist: false });
+        if (consentBanner) consentBanner.setAttribute('data-open', 'true');
+      }
+    };
+
+    if (consentAcceptBtn) {
+      consentAcceptBtn.addEventListener('click', () => {
+        applyConsentState(CONSENT_ACCEPTED);
+        if (consentBanner) consentBanner.removeAttribute('data-open');
+      });
+    }
+
+    if (consentDeclineBtn) {
+      consentDeclineBtn.addEventListener('click', () => {
+        applyConsentState(CONSENT_DECLINED);
+        if (consentBanner) consentBanner.removeAttribute('data-open');
+      });
+    }
 
     /* background video initialization removed */
 
@@ -403,6 +571,7 @@
     };
 
     applyLanguage();
+    initConsent();
 
     const resetTypewriter = () => {
       if (typeTimer) {

@@ -61,6 +61,32 @@ logged_ids: Deque[str] = deque(maxlen=5000)
 logged_id_set: Set[str] = set()
 
 
+@app.middleware("http")
+async def consent_cookie_guard(request: Request, call_next):
+    response = await call_next(request)
+    set_cookie_headers = response.headers.getlist("set-cookie")
+    if not set_cookie_headers:
+        return response
+    if not any(SESSION_COOKIE in header for header in set_cookie_headers):
+        return response
+
+    allow_session_cookie = False
+    if request.url.path == "/api/session/clear":
+        allow_session_cookie = True
+    elif request.url.path == "/api/session":
+        consent_header = request.headers.get("X-Consent", "")
+        allow_session_cookie = consent_header.lower() in {"accepted", "true", "1", "yes"}
+
+    if allow_session_cookie:
+        return response
+
+    filtered = [header for header in set_cookie_headers if SESSION_COOKIE not in header]
+    response.headers.pop("set-cookie", None)
+    for header in filtered:
+        response.headers.append("set-cookie", header)
+    return response
+
+
 def required_file(path: Path, label: str) -> str:
     example_path = path.with_name(f"{path.stem}.example{path.suffix}")
     try:
@@ -126,6 +152,12 @@ def _extract_session_token(request: Request) -> Optional[str]:
     header_token = request.headers.get(SESSION_HEADER)
     cookie_token = request.cookies.get(SESSION_COOKIE)
     return header_token or cookie_token
+
+
+def _invalidate_session(token: Optional[str]) -> None:
+    if not token:
+        return
+    active_sessions.pop(token, None)
 
 
 class ConnectionManager:
@@ -743,26 +775,53 @@ async def channel_info() -> Dict[str, str]:
 
 
 @app.post("/api/session")
-async def create_session(response: Response, body: Dict[str, Any] = Body(...)) -> Dict[str, Any]:
+async def create_session(request: Request, response: Response, body: Dict[str, Any] = Body(...)) -> Dict[str, Any]:
     password = str(body.get("password") or "") if isinstance(body, dict) else ""
     expected = load_admin_password()
     if not hmac.compare_digest(password, expected):
         raise HTTPException(status_code=403, detail="Invalid password")
 
+    consent_header = request.headers.get("X-Consent", "")
+    consent_body = False
+    if isinstance(body, dict):
+        consent_body = bool(body.get("consent"))
+    consent_value = consent_header.lower() in {"accepted", "true", "1", "yes"} or consent_body
+
     token, expires_at = _issue_session()
     expires_dt = datetime.fromtimestamp(expires_at, tz=timezone.utc)
-    max_age = int(timedelta(seconds=SESSION_TTL_SECONDS).total_seconds())
-    secure_cookie = SECURE_COOKIES
-    response.set_cookie(
-        key=SESSION_COOKIE,
-        value=token,
-        max_age=max_age,
-        httponly=True,
-        secure=secure_cookie,
-        samesite="lax",
-        path="/",
-    )
+    if consent_value:
+        max_age = int(timedelta(seconds=SESSION_TTL_SECONDS).total_seconds())
+        secure_cookie = SECURE_COOKIES
+        response.set_cookie(
+            key=SESSION_COOKIE,
+            value=token,
+            max_age=max_age,
+            httponly=True,
+            secure=secure_cookie,
+            samesite="lax",
+            path="/",
+        )
+    else:
+        response.delete_cookie(
+            key=SESSION_COOKIE,
+            path="/",
+            samesite="lax",
+            secure=SECURE_COOKIES,
+        )
     return {"token": token, "expires": expires_dt.isoformat()}
+
+
+@app.post("/api/session/clear")
+async def clear_session(response: Response, request: Request) -> Dict[str, str]:
+    token = _extract_session_token(request)
+    _invalidate_session(token)
+    response.delete_cookie(
+        key=SESSION_COOKIE,
+        path="/",
+        samesite="lax",
+        secure=SECURE_COOKIES,
+    )
+    return {"status": "cleared"}
 
 
 @app.post("/api/custom-message")
