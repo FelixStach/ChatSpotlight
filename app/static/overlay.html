@@ -350,8 +350,8 @@
     const badgeEl = document.querySelector('.badge');
     const cardEl = document.querySelector('.card');
     const translations = {
-      en: { badge: 'NEW COMMENT!' },
-      de: { badge: 'NEUER KOMMENTAR!' },
+      en: { badge: 'NEW COMMENT!', empty: '- No comments yet -' },
+      de: { badge: 'NEUER KOMMENTAR!', empty: '- Noch keine Kommentare -' },
     };
 
     let currentLang = localStorage.getItem(LANGUAGE_STORAGE_KEY) || 'de';
@@ -364,6 +364,9 @@
     const applyLanguage = () => {
       if (badgeEl) {
         badgeEl.innerHTML = `<span class="status-dot"></span> <span class="badge-text">${t('badge')}</span> <span class="chevrons">▸▸</span>`;
+      }
+      if (messageEl && messageEl.dataset.empty === 'true') {
+        messageEl.textContent = t('empty');
       }
     };
 
@@ -409,7 +412,37 @@
       if (messageEl) {
         messageEl.textContent = '';
         messageEl.dataset.typing = 'false';
+        messageEl.dataset.empty = 'false';
       }
+    };
+
+    const showEmptyState = () => {
+      if (hideTimer) clearTimeout(hideTimer);
+      resetTypewriter();
+      if (messageEl) {
+        messageEl.classList.remove('hidden');
+        messageEl.textContent = t('empty');
+        messageEl.dataset.typing = 'false';
+        messageEl.dataset.empty = 'true';
+      }
+
+      if (cardEl) {
+        cardEl.classList.remove('card-hidden', 'card-disappear', 'card-appear');
+        void cardEl.offsetWidth;
+        cardEl.classList.add('card-appear');
+      }
+
+      hideTimer = setTimeout(() => {
+        if (messageEl) messageEl.classList.add('hidden');
+        if (cardEl) {
+          cardEl.classList.remove('card-appear');
+          cardEl.classList.add('card-disappear');
+          setTimeout(() => {
+            cardEl.classList.add('card-hidden');
+            cardEl.classList.remove('card-disappear');
+          }, PIXEL_ANIM_MS);
+        }
+      }, DISPLAY_MS);
     };
 
     const typeText = (text) => {
@@ -450,6 +483,7 @@
       const text = (payload.text || '').trim();
       if (messageEl) {
         messageEl.classList.remove('hidden');
+        messageEl.dataset.empty = 'false';
       }
 
       if (cardEl) {
@@ -475,6 +509,8 @@
       }, DISPLAY_MS);
     };
 
+    showEmptyState();
+
     socket.addEventListener('open', () => {
       if (statusEl) statusEl.textContent = 'Connected';
     });
@@ -484,7 +520,11 @@
         const payload = JSON.parse(event.data);
         if (payload.type === 'history' && Array.isArray(payload.messages)) {
           const latest = [...payload.messages].reverse().find(isViewerCustom);
-          if (latest) showMessage(latest);
+          if (latest) {
+            showMessage(latest);
+          } else {
+            showEmptyState();
+          }
           return;
         }
         if (payload.type === 'chat' && isViewerCustom(payload)) {
