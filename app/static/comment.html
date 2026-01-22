@@ -269,7 +269,8 @@
       flex-wrap: wrap;
     }
 
-    .btn-secondary {
+    .btn-secondary,
+    .btn-primary {
       border: 1px solid var(--panel-border);
       background: rgba(255, 255, 255, 0.06);
       color: var(--text-primary);
@@ -278,14 +279,77 @@
       cursor: pointer;
       font-weight: 700;
       transition: background 140ms ease, border-color 140ms ease, transform 120ms ease, box-shadow 140ms ease, color 140ms ease;
+      position: relative;
+      overflow: hidden;
+      isolation: isolate;
     }
 
-    .btn-secondary:hover {
-      background: rgba(255, 255, 255, 0.12);
+    .btn-secondary:hover,
+    .btn-primary:hover {
+      background: rgba(255, 255, 255, 0.08);
       border-color: var(--accent-soft);
     }
 
-    .btn-secondary:active {
+    .btn-secondary:active,
+    .btn-primary:active {
+      transform: translateY(1px);
+    }
+
+    .btn-primary {
+      border-color: rgba(88, 221, 161, 0.5);
+      background: linear-gradient(135deg, rgba(88, 221, 161, 0.14), rgba(40, 70, 58, 0.5));
+      color: #b3f2d8;
+      background-size: 200% 200%;
+      animation: spotlightFlow 12s ease-in-out infinite;
+      filter: saturate(1.08);
+    }
+
+    .btn-primary:hover {
+      border-color: rgba(88, 221, 161, 0.65);
+      background: linear-gradient(135deg, rgba(88, 221, 161, 0.22), rgba(40, 90, 68, 0.62));
+      color: #d6f7ea;
+    }
+
+    .btn-primary::after,
+    .btn-secondary::after {
+      content: '';
+      position: absolute;
+      top: -140%;
+      left: -50%;
+      width: 60%;
+      height: 380%;
+      transform: translateX(-90%) rotate(18deg);
+      background: linear-gradient(
+        100deg,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.14) 45%,
+        rgba(255, 255, 255, 0) 70%
+      );
+      opacity: 0;
+      transition: transform 900ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 260ms ease;
+      pointer-events: none;
+      mix-blend-mode: screen;
+    }
+
+    .btn-primary:hover::after,
+    .btn-secondary:hover::after {
+      transform: translateX(160%) rotate(18deg);
+      opacity: 0.6;
+    }
+
+    @keyframes spotlightFlow {
+      0% {
+        background-position: 0% 40%;
+      }
+      50% {
+        background-position: 100% 60%;
+      }
+      100% {
+        background-position: 0% 40%;
+      }
+    }
+
+    .btn-primary:active {
       transform: translateY(1px);
     }
 
@@ -369,7 +433,7 @@
         </div>
         <div class="actions">
           <div id="comment-status" class="status" aria-live="polite"></div>
-          <button type="submit" class="send-button" data-i18n="comment.send">Senden</button>
+          <button type="submit" class="btn-primary" data-i18n="comment.send">Senden</button>
         </div>
       </form>
     </section>
@@ -485,7 +549,6 @@
     };
 
     applyTranslations();
-    ensureUsernameDefault();
 
     const baseUrl = new URL('.', window.location.href);
     const apiCommentConfigUrl = new URL('api/comment-config', baseUrl);
@@ -504,6 +567,60 @@
     };
 
     let externalConsent = false;
+
+    const COMMENT_USER_COOKIE = 'chatspotlight_comment_user';
+    const COMMENT_TEXT_COOKIE = 'chatspotlight_comment_text';
+    const COMMENT_PIN_COOKIE = 'chatspotlight_comment_pin';
+
+    const setCookie = (name, value, days = 30) => {
+      if (!externalConsent) return;
+      const encoded = encodeURIComponent(value || '');
+      const expires = new Date(Date.now() + days * 864e5).toUTCString();
+      document.cookie = `${name}=${encoded};expires=${expires};path=/;SameSite=Lax`;
+    };
+
+    const getCookie = (name) => {
+      const prefix = `${name}=`;
+      return document.cookie
+        .split(';')
+        .map((part) => part.trim())
+        .filter((part) => part.startsWith(prefix))
+        .map((part) => decodeURIComponent(part.slice(prefix.length)))[0];
+    };
+
+    const clearCookie = (name) => {
+      document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;SameSite=Lax`;
+    };
+
+    const setPinValue = (value) => {
+      const safe = (value || '').toString();
+      pinInputs.forEach((input, idx) => {
+        input.value = safe[idx] ? safe[idx] : '';
+      });
+    };
+
+    const restoreFormState = () => {
+      if (!externalConsent) return;
+      if (usernameInput) {
+        const storedUser = getCookie(COMMENT_USER_COOKIE);
+        if (storedUser) usernameInput.value = storedUser;
+      }
+      if (messageInput) {
+        const storedText = getCookie(COMMENT_TEXT_COOKIE);
+        if (storedText) messageInput.value = storedText;
+      }
+      if (pinInputs.length) {
+        const storedPin = getCookie(COMMENT_PIN_COOKIE);
+        if (storedPin) setPinValue(storedPin);
+      }
+    };
+
+    const persistFormState = () => {
+      if (!externalConsent) return;
+      if (usernameInput) setCookie(COMMENT_USER_COOKIE, usernameInput.value || '');
+      if (messageInput) setCookie(COMMENT_TEXT_COOKIE, messageInput.value || '');
+      if (pinInputs.length) setCookie(COMMENT_PIN_COOKIE, getPinValue());
+    };
 
     const loadExternalFonts = () => {
       if (document.querySelector('#external-fonts')) return;
@@ -526,8 +643,12 @@
       if (externalConsent) {
         if (persist) localStorage.setItem(CONSENT_STORAGE_KEY, value);
         loadExternalFonts();
+        restoreFormState();
       } else if (persist) {
         localStorage.removeItem(CONSENT_STORAGE_KEY);
+        clearCookie(COMMENT_USER_COOKIE);
+        clearCookie(COMMENT_TEXT_COOKIE);
+        clearCookie(COMMENT_PIN_COOKIE);
       }
     };
 
@@ -557,6 +678,7 @@
     }
 
     initConsent();
+    ensureUsernameDefault();
     loadCommentConfig();
 
     const getPinValue = () => pinInputs.map((input) => (input.value || '').trim()).join('');
@@ -603,17 +725,20 @@
             evt.preventDefault();
             if (input.value) {
               input.value = '';
+              persistFormState();
               return;
             }
             if (idx > 0) {
               focusAt(idx - 1);
               pinInputs[idx - 1].value = '';
+              persistFormState();
             }
             return;
           }
           if (key.length === 1 && !evt.ctrlKey && !evt.metaKey && !evt.altKey) {
             evt.preventDefault();
             input.value = key;
+            persistFormState();
             if (idx < pinInputs.length - 1) {
               focusAt(idx + 1);
             } else {
@@ -626,7 +751,20 @@
           evt.preventDefault();
           const text = evt.clipboardData?.getData('text') || '';
           handlePaste(text, idx);
+          persistFormState();
         });
+      });
+    }
+
+    if (usernameInput) {
+      usernameInput.addEventListener('input', () => {
+        persistFormState();
+      });
+    }
+
+    if (messageInput) {
+      messageInput.addEventListener('input', () => {
+        persistFormState();
       });
     }
 
@@ -666,6 +804,7 @@
           if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
           setStatus('comment.status.sent', 'success');
           messageInput.value = '';
+          persistFormState();
         } catch (err) {
           console.error('Failed to send comment', err);
           setStatus('comment.status.error', 'error');
