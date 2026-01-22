@@ -125,6 +125,10 @@
       gap: 0.9rem;
     }
 
+    .pin-wrap[data-hidden="true"] {
+      display: none;
+    }
+
     .pin-grid {
       display: flex;
       gap: 0.8rem;
@@ -459,6 +463,7 @@
 
     const commentForm = document.querySelector('#comment-form');
     const usernameInput = document.querySelector('#comment-username');
+    const pinWrap = document.querySelector('.pin-wrap');
     const pinInputs = Array.from(document.querySelectorAll('.comment-pin-digit'));
     const messageInput = document.querySelector('#comment-message');
     const statusEl = document.querySelector('#comment-status');
@@ -481,6 +486,22 @@
 
     applyTranslations();
     ensureUsernameDefault();
+
+    const baseUrl = new URL('.', window.location.href);
+    const apiCommentConfigUrl = new URL('api/comment-config', baseUrl);
+
+    const loadCommentConfig = async () => {
+      if (!pinWrap) return;
+      try {
+        const resp = await fetch(apiCommentConfigUrl);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const data = await resp.json();
+        const enabled = Boolean(data?.pin_enabled);
+        pinWrap.dataset.hidden = enabled ? 'false' : 'true';
+      } catch (err) {
+        console.warn('Failed to load comment config', err);
+      }
+    };
 
     let externalConsent = false;
 
@@ -536,6 +557,7 @@
     }
 
     initConsent();
+    loadCommentConfig();
 
     const getPinValue = () => pinInputs.map((input) => (input.value || '').trim()).join('');
 
@@ -615,12 +637,14 @@
         const text = (messageInput?.value || '').trim();
         const user = (usernameInput?.value || '').trim() || t('comment.username.default');
 
-        if (pin.length !== 4 || pinInputs.some((input) => !input.value)) {
-          setStatus('comment.status.pinInvalid', 'error');
-          pinInputs.forEach((input) => input.setAttribute('aria-invalid', 'true'));
-          return;
+        if (pinWrap?.dataset.hidden !== 'true') {
+          if (pin.length !== 4 || pinInputs.some((input) => !input.value)) {
+            setStatus('comment.status.pinInvalid', 'error');
+            pinInputs.forEach((input) => input.setAttribute('aria-invalid', 'true'));
+            return;
+          }
+          pinInputs.forEach((input) => input.removeAttribute('aria-invalid'));
         }
-        pinInputs.forEach((input) => input.removeAttribute('aria-invalid'));
 
         if (!text) {
           setStatus('comment.status.textMissing', 'error');
@@ -633,7 +657,7 @@
           const resp = await fetch(apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user, text, pin }),
+            body: JSON.stringify({ user, text, pin: pinWrap?.dataset.hidden === 'true' ? '' : pin }),
           });
           if (resp.status === 403) {
             setStatus('comment.status.pinWrong', 'error');

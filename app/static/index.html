@@ -502,6 +502,9 @@
       display: flex;
       flex-direction: column;
       gap: 1.2rem;
+    .setting-row[data-disabled="true"] {
+      opacity: 0.6;
+    }
       max-height: 90vh;
       max-height: 90svh;
       max-height: 90dvh;
@@ -509,6 +512,59 @@
     }
 
     .settings-head {
+    .pin-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .pin-toggle-label {
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+    .toggle-switch {
+      position: relative;
+      width: 52px;
+      height: 28px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--panel-border);
+      transition: background 160ms ease, border-color 160ms ease;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .toggle-switch::after {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 4px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #f5f6fc;
+      transition: transform 160ms ease, background 160ms ease;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+    }
+    .toggle-switch input {
+      position: absolute;
+      opacity: 0;
+      inset: 0;
+      margin: 0;
+      cursor: pointer;
+    }
+    .toggle-switch[data-on="true"] {
+      border-color: rgba(248, 180, 88, 0.6);
+      background: linear-gradient(135deg, rgba(248, 212, 119, 0.2), rgba(140, 88, 18, 0.25));
+    }
+    .toggle-switch[data-on="true"]::after {
+      transform: translateX(24px);
+      background: #fcebc2;
+    }
+    .pin-inputs[data-disabled="true"] {
+      opacity: 0.45;
+      pointer-events: none;
+      filter: saturate(0.7);
+    }
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
@@ -2502,7 +2558,7 @@
         </button>
       </div>
       <div class="settings-list">
-        <div class="setting-row">
+        <div class="setting-row" id="comment-pin-row">
           <div>
             <div class="setting-label" data-i18n="settings.language.label">Language</div>
             <div class="setting-hint" data-i18n="settings.language.hint">Choose UI language (default: German).</div>
@@ -2686,7 +2742,13 @@
         Set a new 4-character PIN for the comment page.
       </div>
       <form id="comment-pin-form" class="confirm-form" autocomplete="off">
-        <div class="pin-grid" aria-label="Comment PIN" data-i18n-attr="aria-label" data-i18n="settings.commentPin.label">
+        <div class="pin-toggle">
+          <span class="pin-toggle-label" data-i18n="settings.commentPin.enabledLabel">PIN required</span>
+          <label class="toggle-switch" id="comment-pin-toggle" data-on="true">
+            <input type="checkbox" id="comment-pin-enabled" aria-label="Enable comment PIN" />
+          </label>
+        </div>
+        <div class="pin-grid pin-inputs" id="comment-pin-inputs" aria-label="Comment PIN" data-i18n-attr="aria-label" data-i18n="settings.commentPin.label">
           <input
             class="pin-cell comment-pin-digit"
             type="text"
@@ -2816,9 +2878,13 @@
     const resetOverlay = document.querySelector('#reset-confirm');
     const resetConfirmBtn = document.querySelector('#reset-confirm-btn');
     const resetCancelBtn = document.querySelector('#reset-cancel');
+    const commentPinRow = document.querySelector('#comment-pin-row');
     const commentPinOpenBtn = document.querySelector('#comment-pin-open');
     const commentPinDialog = document.querySelector('#comment-pin-dialog');
     const commentPinForm = document.querySelector('#comment-pin-form');
+    const commentPinInputsWrap = document.querySelector('#comment-pin-inputs');
+    const commentPinToggle = document.querySelector('#comment-pin-toggle');
+    const commentPinEnabledInput = document.querySelector('#comment-pin-enabled');
     const commentPinInputs = Array.from(document.querySelectorAll('.comment-pin-digit'));
     const commentPinStatus = document.querySelector('#comment-pin-status');
     const commentPinCancelBtn = document.querySelector('#comment-pin-cancel');
@@ -2840,6 +2906,7 @@
     const apiSessionClearUrl = new URL('api/session/clear', baseUrl);
     const apiCustomMessageUrl = new URL('api/custom-message', baseUrl);
     const apiCommentPinUrl = new URL('api/comment-pin', baseUrl);
+    const apiCommentConfigUrl = new URL('api/comment-config', baseUrl);
     const apiResetUrl = new URL('api/reset', baseUrl);
     const wsUrl = new URL('ws/chat', baseUrl);
     wsUrl.protocol = wsUrl.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -2905,6 +2972,7 @@
         'settings.commentPin.hintShort': 'Esc to cancel',
         'settings.commentPin.title': 'Change comment PIN',
         'settings.commentPin.dialogHint': 'Set a new 4-character PIN for the comment page.',
+        'settings.commentPin.enabledLabel': 'PIN required',
         'settings.commentPin.cancel': 'Cancel',
         'settings.commentPin.save': 'Save',
         'settings.close': 'Close settings',
@@ -2982,6 +3050,7 @@
         'settings.commentPin.hintShort': 'Esc zum Abbrechen',
         'settings.commentPin.title': 'Kommentar-PIN ändern',
         'settings.commentPin.dialogHint': 'Lege eine neue 4-stellige PIN für die Kommentar-Seite fest.',
+        'settings.commentPin.enabledLabel': 'PIN erforderlich',
         'settings.commentPin.cancel': 'Abbrechen',
         'settings.commentPin.save': 'Speichern',
         'settings.close': 'Einstellungen schließen',
@@ -3366,6 +3435,25 @@
       commentPinInputs.forEach((input) => input.removeAttribute('aria-invalid'));
     };
 
+    const setCommentPinEnabledState = (enabled) => {
+      const isEnabled = !!enabled;
+      if (commentPinRow) commentPinRow.dataset.disabled = isEnabled ? 'false' : 'true';
+      if (commentPinToggle) commentPinToggle.dataset.on = isEnabled ? 'true' : 'false';
+      if (commentPinEnabledInput) commentPinEnabledInput.checked = isEnabled;
+      if (commentPinInputsWrap) commentPinInputsWrap.dataset.disabled = isEnabled ? 'false' : 'true';
+    };
+
+    const loadCommentPinConfig = async () => {
+      try {
+        const resp = await fetch(apiCommentConfigUrl);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const data = await resp.json();
+        setCommentPinEnabledState(Boolean(data?.pin_enabled));
+      } catch (err) {
+        console.warn('Failed to load comment PIN config', err);
+      }
+    };
+
     const openCommentPinDialog = async () => {
       if (!commentPinDialog) return;
       commentPinDialog.setAttribute('data-open', 'true');
@@ -3399,6 +3487,9 @@
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         const data = await resp.json();
         setPinValue(data?.pin || '');
+        if (data && typeof data.pin_enabled !== 'undefined') {
+          setCommentPinEnabledState(Boolean(data.pin_enabled));
+        }
       } catch (err) {
         console.error('Failed to load comment PIN', err);
       }
@@ -3553,22 +3644,29 @@
     };
 
     const submitCommentPin = async () => {
+      const enabled = commentPinEnabledInput ? commentPinEnabledInput.checked : true;
       const pin = getPinValue();
-      if (pin.length !== 4 || commentPinInputs.some((input) => !input.value)) {
-        commentPinInputs.forEach((input) => input.setAttribute('aria-invalid', 'true'));
-        flashCommentPinState('settings.commentPin.invalid', 'error');
-        return;
+      if (enabled) {
+        if (pin.length !== 4 || commentPinInputs.some((input) => !input.value)) {
+          commentPinInputs.forEach((input) => input.setAttribute('aria-invalid', 'true'));
+          flashCommentPinState('settings.commentPin.invalid', 'error');
+          return;
+        }
+        commentPinInputs.forEach((input) => input.removeAttribute('aria-invalid'));
+      } else {
+        commentPinInputs.forEach((input) => input.removeAttribute('aria-invalid'));
       }
-      commentPinInputs.forEach((input) => input.removeAttribute('aria-invalid'));
 
       try {
+        const payload = { enabled };
+        if (enabled) payload.pin = pin;
         const resp = await fetch(apiCommentPinUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             [SESSION_HEADER]: authToken || '',
           },
-          body: JSON.stringify({ pin }),
+          body: JSON.stringify(payload),
         });
         if (resp.status === 401 || resp.status === 403) {
           setAuthToken(null);
@@ -3580,6 +3678,7 @@
           input.value = '';
         });
         flashCommentPinState('settings.commentPin.success', 'success');
+        await loadCommentPinConfig();
         closeCommentPinDialog();
       } catch (err) {
         console.error('Failed to update comment PIN', err);
@@ -3606,6 +3705,7 @@
 
     setLanguage(currentLang);
     initConsent();
+    loadCommentPinConfig();
     primeEmptyQueue();
     loadChannelName();
     setQueueView('queue');
@@ -4646,6 +4746,12 @@
             closeCommentPinDialog();
             openSettings();
           }
+        });
+      }
+
+      if (commentPinEnabledInput) {
+        commentPinEnabledInput.addEventListener('change', () => {
+          setCommentPinEnabledState(commentPinEnabledInput.checked);
         });
       }
 

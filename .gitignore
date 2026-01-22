@@ -4,6 +4,7 @@ app/config/oauth_token.txt
 app/config/username.txt
 app/config/password.txt
 app/config/comment_pin.txt
+app/config/comment_pin_enabled.txt
 
 # Local development artifacts
 .venv/

@@ -27,6 +27,7 @@ CHANNEL_FILE = CONFIG_DIR / "channel.txt"
 TOKEN_FILE = CONFIG_DIR / "oauth_token.txt"
 PASSWORD_FILE = CONFIG_DIR / "password.txt"
 COMMENT_PIN_FILE = CONFIG_DIR / "comment_pin.txt"
+COMMENT_PIN_ENABLED_FILE = CONFIG_DIR / "comment_pin_enabled.txt"
 LOG_DIR = BASE_DIR / "logs"
 CHAT_LOG_FILE = LOG_DIR / "chat.log"
 
@@ -58,6 +59,7 @@ highlight_queue: List[Dict[str, Any]] = []
 active_sessions: Dict[str, float] = {}
 ADMIN_PASSWORD: Optional[str] = None
 COMMENT_PIN: Optional[str] = None
+COMMENT_PIN_ENABLED: Optional[bool] = None
 twitch_send_queue: Optional[asyncio.Queue[str]] = None
 logged_ids: Deque[str] = deque(maxlen=5000)
 logged_id_set: Set[str] = set()
@@ -137,6 +139,44 @@ def get_comment_pin() -> str:
 def set_comment_pin(pin: str) -> None:
     global COMMENT_PIN
     COMMENT_PIN = pin
+
+
+def _coerce_bool(value: Any) -> Optional[bool]:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, int):
+        return bool(value)
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"1", "true", "yes", "on", "enabled"}:
+            return True
+        if normalized in {"0", "false", "no", "off", "disabled"}:
+            return False
+    return None
+
+
+def load_comment_pin_enabled() -> bool:
+    global COMMENT_PIN_ENABLED
+    raw = required_file(COMMENT_PIN_ENABLED_FILE, "comment pin enabled")
+    parsed = _coerce_bool(raw)
+    if parsed is None:
+        message = f"comment pin enabled file at {COMMENT_PIN_ENABLED_FILE} has invalid value."
+        logging.critical(message)
+        raise RuntimeError(message)
+    COMMENT_PIN_ENABLED = parsed
+    return parsed
+
+
+def get_comment_pin_enabled() -> bool:
+    global COMMENT_PIN_ENABLED
+    if COMMENT_PIN_ENABLED is None:
+        return load_comment_pin_enabled()
+    return COMMENT_PIN_ENABLED
+
+
+def set_comment_pin_enabled(enabled: bool) -> None:
+    global COMMENT_PIN_ENABLED
+    COMMENT_PIN_ENABLED = enabled
 
 
 def _now_ts() -> float:
@@ -744,6 +784,7 @@ async def startup_event() -> None:
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     load_admin_password()
     load_comment_pin()
+    load_comment_pin_enabled()
     if USE_FAKE_STREAM:
         app.state.chat_task = asyncio.create_task(fake_chat_loop())
         mode = "fake"
@@ -890,13 +931,14 @@ async def comment_message(body: Dict[str, Any] = Body(...)) -> Dict[str, str]:
     if not isinstance(body, dict):
         raise HTTPException(status_code=400, detail="Invalid payload")
 
-    raw_pin = str(body.get("pin") or "").strip()
-    if len(raw_pin) != 4:
-        raise HTTPException(status_code=400, detail="pin must be 4 characters")
+    if get_comment_pin_enabled():
+        raw_pin = str(body.get("pin") or "").strip()
+        if len(raw_pin) != 4:
+            raise HTTPException(status_code=400, detail="pin must be 4 characters")
 
-    expected = get_comment_pin()
-    if not hmac.compare_digest(raw_pin, expected):
-        raise HTTPException(status_code=403, detail="Invalid pin")
+        expected = get_comment_pin()
+        if not hmac.compare_digest(raw_pin, expected):
+            raise HTTPException(status_code=403, detail="Invalid pin")
 
     raw_user = str(body.get("user") or "").strip()
     raw_text = str(body.get("text") or "").strip()
@@ -922,14 +964,30 @@ async def update_comment_pin(request: Request, body: Dict[str, Any] = Body(...))
     if not isinstance(body, dict):
         raise HTTPException(status_code=400, detail="Invalid payload")
 
-    raw_pin = str(body.get("pin") or "").strip()
-    if len(raw_pin) != 4:
-        raise HTTPException(status_code=400, detail="pin must be 4 characters")
+    has_update = False
 
-    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-    COMMENT_PIN_FILE.write_text(f"{raw_pin}\n", encoding="utf-8")
-    set_comment_pin(raw_pin)
-    return {"status": "ok"}
+    if "enabled" in body:
+        enabled = _coerce_bool(body.get("enabled"))
+        if enabled is None:
+            raise HTTPException(status_code=400, detail="enabled must be boolean")
+        CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+        COMMENT_PIN_ENABLED_FILE.write_text("1\n" if enabled else "0\n", encoding="utf-8")
+        set_comment_pin_enabled(enabled)
+        has_update = True
+
+    if "pin" in body and body.get("pin") is not None:
+        raw_pin = str(body.get("pin") or "").strip()
+        if len(raw_pin) != 4:
+            raise HTTPException(status_code=400, detail="pin must be 4 characters")
+        CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+        COMMENT_PIN_FILE.write_text(f"{raw_pin}\n", encoding="utf-8")
+        set_comment_pin(raw_pin)
+        has_update = True
+
+    if not has_update:
+        raise HTTPException(status_code=400, detail="No updates provided")
+
+    return {"status": "ok", "pin_enabled": get_comment_pin_enabled()}
 
 
 @app.get("/api/comment-pin")
@@ -937,7 +995,12 @@ async def read_comment_pin(request: Request) -> Dict[str, str]:
     token = _extract_session_token(request)
     if not _validate_session(token):
         raise HTTPException(status_code=401, detail="Authentication required")
-    return {"pin": get_comment_pin()}
+    return {"pin": get_comment_pin(), "pin_enabled": get_comment_pin_enabled()}
+
+
+@app.get("/api/comment-config")
+async def read_comment_config() -> Dict[str, bool]:
+    return {"pin_enabled": get_comment_pin_enabled()}
 
 
 @app.post("/api/reset")
