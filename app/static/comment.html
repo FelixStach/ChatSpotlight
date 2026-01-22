@@ -211,6 +211,80 @@
       color: var(--danger);
     }
 
+    .consent-banner {
+      position: fixed;
+      left: clamp(1rem, 2vw, 2rem);
+      right: clamp(1rem, 2vw, 2rem);
+      bottom: clamp(1rem, 2vw, 2rem);
+      z-index: 35;
+      background: rgba(10, 12, 28, 0.92);
+      border: 1px solid var(--panel-border);
+      border-radius: 20px;
+      padding: 1rem 1.25rem;
+      box-shadow: var(--shadow-soft);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+      opacity: 0;
+      transform: translateY(16px);
+      pointer-events: none;
+      transition: opacity 200ms ease, transform 200ms ease;
+    }
+
+    .consent-banner[data-open="true"] {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .consent-content {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      min-width: min(480px, 100%);
+      max-width: 880px;
+    }
+
+    .consent-title {
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    .consent-text {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
+    .consent-actions {
+      display: flex;
+      gap: 0.6rem;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .btn-secondary {
+      border: 1px solid var(--panel-border);
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-primary);
+      border-radius: 12px;
+      padding: 0.55rem 1.1rem;
+      cursor: pointer;
+      font-weight: 700;
+      transition: background 140ms ease, border-color 140ms ease, transform 120ms ease, box-shadow 140ms ease, color 140ms ease;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: var(--accent-soft);
+    }
+
+    .btn-secondary:active {
+      transform: translateY(1px);
+    }
+
     @media (max-width: 720px) {
       .comment-card {
         border-radius: 24px;
@@ -297,9 +371,27 @@
     </section>
   </main>
 
+  <div class="consent-banner" id="consent-banner" role="dialog" aria-live="polite" aria-label="Privacy notice">
+    <div class="consent-content">
+      <div class="consent-title" data-i18n="consent.title">Privacy notice</div>
+      <div class="consent-text" data-i18n="consent.text">
+        This app loads external resources (Google Fonts, Twitch player, and Twitch CDN for emotes). Cookies/session storage are only stored after you accept. Accept to load external content.
+      </div>
+    </div>
+    <div class="consent-actions">
+      <button type="button" class="btn-secondary" id="consent-decline" data-i18n="consent.decline">Decline</button>
+      <button type="button" class="send-button" id="consent-accept" data-i18n="consent.accept">Accept</button>
+    </div>
+  </div>
+
   <script type="module">
     const LANGUAGE_STORAGE_KEY = 'chatspotlight-lang';
     const DEFAULT_LANG = 'de';
+    const CONSENT_STORAGE_KEY = 'chatspotlight-consent';
+    const CONSENT_ACCEPTED = 'accepted';
+    const CONSENT_DECLINED = 'declined';
+    const EXTERNAL_FONT_URL =
+      'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap';
 
     const translations = {
       en: {
@@ -316,6 +408,11 @@
         'comment.status.pinWrong': 'PIN is incorrect.',
         'comment.status.textMissing': 'Please enter a comment.',
         'comment.status.error': 'Unable to send comment. Try again.',
+        'consent.title': 'Privacy notice',
+        'consent.text':
+          'This app loads external resources (Google Fonts, Twitch player, and Twitch CDN for emotes). Cookies/session storage are only stored after you accept. Accept to load external content.',
+        'consent.accept': 'Accept',
+        'consent.decline': 'Decline',
       },
       de: {
         'comment.title': 'Kommentar senden',
@@ -331,6 +428,11 @@
         'comment.status.pinWrong': 'PIN ist falsch.',
         'comment.status.textMissing': 'Bitte einen Kommentar eingeben.',
         'comment.status.error': 'Kommentar konnte nicht gesendet werden.',
+        'consent.title': 'Datenschutzhinweis',
+        'consent.text':
+          'Diese App lädt externe Ressourcen (Google Fonts, Twitch-Player und Twitch-CDN für Emotes). Cookies/Session-Speicher werden erst nach deiner Zustimmung gespeichert. Zustimmung erforderlich, um externe Inhalte zu laden.',
+        'consent.accept': 'Akzeptieren',
+        'consent.decline': 'Ablehnen',
       },
     };
 
@@ -360,6 +462,9 @@
     const pinInputs = Array.from(document.querySelectorAll('.comment-pin-digit'));
     const messageInput = document.querySelector('#comment-message');
     const statusEl = document.querySelector('#comment-status');
+    const consentBanner = document.querySelector('#consent-banner');
+    const consentAcceptBtn = document.querySelector('#consent-accept');
+    const consentDeclineBtn = document.querySelector('#consent-decline');
 
     const setStatus = (key, state = 'info') => {
       if (!statusEl) return;
@@ -376,6 +481,61 @@
 
     applyTranslations();
     ensureUsernameDefault();
+
+    let externalConsent = false;
+
+    const loadExternalFonts = () => {
+      if (document.querySelector('#external-fonts')) return;
+      const preconnectGoogle = document.createElement('link');
+      preconnectGoogle.rel = 'preconnect';
+      preconnectGoogle.href = 'https://fonts.googleapis.com';
+      const preconnectGstatic = document.createElement('link');
+      preconnectGstatic.rel = 'preconnect';
+      preconnectGstatic.href = 'https://fonts.gstatic.com';
+      preconnectGstatic.crossOrigin = 'anonymous';
+      const stylesheet = document.createElement('link');
+      stylesheet.id = 'external-fonts';
+      stylesheet.rel = 'stylesheet';
+      stylesheet.href = EXTERNAL_FONT_URL;
+      document.head.append(preconnectGoogle, preconnectGstatic, stylesheet);
+    };
+
+    const applyConsentState = (value, { persist = true } = {}) => {
+      externalConsent = value === CONSENT_ACCEPTED;
+      if (externalConsent) {
+        if (persist) localStorage.setItem(CONSENT_STORAGE_KEY, value);
+        loadExternalFonts();
+      } else if (persist) {
+        localStorage.removeItem(CONSENT_STORAGE_KEY);
+      }
+    };
+
+    const initConsent = () => {
+      const stored = localStorage.getItem(CONSENT_STORAGE_KEY);
+      if (stored === CONSENT_ACCEPTED) {
+        applyConsentState(stored, { persist: false });
+        if (consentBanner) consentBanner.removeAttribute('data-open');
+      } else {
+        applyConsentState(CONSENT_DECLINED, { persist: false });
+        if (consentBanner) consentBanner.setAttribute('data-open', 'true');
+      }
+    };
+
+    if (consentAcceptBtn) {
+      consentAcceptBtn.addEventListener('click', () => {
+        applyConsentState(CONSENT_ACCEPTED);
+        if (consentBanner) consentBanner.removeAttribute('data-open');
+      });
+    }
+
+    if (consentDeclineBtn) {
+      consentDeclineBtn.addEventListener('click', () => {
+        applyConsentState(CONSENT_DECLINED);
+        if (consentBanner) consentBanner.removeAttribute('data-open');
+      });
+    }
+
+    initConsent();
 
     const getPinValue = () => pinInputs.map((input) => (input.value || '').trim()).join('');
 
