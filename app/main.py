@@ -85,7 +85,8 @@ async def consent_cookie_guard(request: Request, call_next):
         return response
 
     filtered = [header for header in set_cookie_headers if SESSION_COOKIE not in header]
-    response.headers.pop("set-cookie", None)
+    if "set-cookie" in response.headers:
+        del response.headers["set-cookie"]
     for header in filtered:
         response.headers.append("set-cookie", header)
     return response
@@ -957,7 +958,7 @@ async def comment_message(body: Dict[str, Any] = Body(...)) -> Dict[str, str]:
 
 
 @app.post("/api/comment-pin")
-async def update_comment_pin(request: Request, body: Dict[str, Any] = Body(...)) -> Dict[str, str]:
+async def update_comment_pin(request: Request, body: Dict[str, Any] = Body(...)) -> Dict[str, Any]:
     token = _extract_session_token(request)
     if not _validate_session(token):
         raise HTTPException(status_code=401, detail="Authentication required")
@@ -991,7 +992,7 @@ async def update_comment_pin(request: Request, body: Dict[str, Any] = Body(...))
 
 
 @app.get("/api/comment-pin")
-async def read_comment_pin(request: Request) -> Dict[str, str]:
+async def read_comment_pin(request: Request) -> Dict[str, Any]:
     token = _extract_session_token(request)
     if not _validate_session(token):
         raise HTTPException(status_code=401, detail="Authentication required")
@@ -999,7 +1000,7 @@ async def read_comment_pin(request: Request) -> Dict[str, str]:
 
 
 @app.get("/api/comment-config")
-async def read_comment_config() -> Dict[str, bool]:
+async def read_comment_config() -> Dict[str, Any]:
     return {"pin_enabled": get_comment_pin_enabled()}
 
 
