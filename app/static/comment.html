@@ -766,6 +766,25 @@
       messageInput.addEventListener('input', () => {
         persistFormState();
       });
+
+      messageInput.addEventListener('keydown', (evt) => {
+        if (
+          evt.key === 'Enter' &&
+          !evt.shiftKey &&
+          !evt.altKey &&
+          !evt.ctrlKey &&
+          !evt.metaKey
+        ) {
+          evt.preventDefault();
+          if (commentForm) {
+            if (typeof commentForm.requestSubmit === 'function') {
+              commentForm.requestSubmit();
+            } else {
+              commentForm.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+            }
+          }
+        }
+      });
     }
 
     if (commentForm) {
