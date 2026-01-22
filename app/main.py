@@ -46,7 +46,7 @@ SESSION_TTL_SECONDS = 43200
 SESSION_HEADER = "X-Session-Token"
 SESSION_COOKIE = "chatspotlight_session"
 SECURE_COOKIES = False
-PROTECTED_EVENTS = {"highlight", "clearHighlight", "pin", "unpin", "rumble"}
+PROTECTED_EVENTS = {"highlight", "clearHighlight", "pin", "unpin", "rumble", "pendingConfirm"}
 
 CHANNEL_NAME: Optional[str] = None
 
@@ -56,6 +56,7 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 recent_messages: Deque[Dict[str, Any]] = deque(maxlen=HISTORY_LIMIT)
 message_lookup: Dict[str, Dict[str, Any]] = {}
 highlight_queue: List[Dict[str, Any]] = []
+pending_comments: List[Dict[str, Any]] = []
 active_sessions: Dict[str, float] = {}
 ADMIN_PASSWORD: Optional[str] = None
 COMMENT_PIN: Optional[str] = None
@@ -233,6 +234,8 @@ class ConnectionManager:
         if recent_messages:
             await websocket.send_json({"type": "history", "messages": list(recent_messages)})
         await websocket.send_json({"type": "highlightQueue", "items": queue_snapshot()})
+        if pending_comments:
+            await websocket.send_json({"type": "pendingComments", "items": pending_comments_snapshot()})
 
     async def disconnect(self, websocket: WebSocket) -> None:
         async with self._lock:
@@ -337,6 +340,7 @@ def reset_chat_state() -> None:
     recent_messages.clear()
     message_lookup.clear()
     highlight_queue.clear()
+    pending_comments.clear()
     logged_ids.clear()
     logged_id_set.clear()
     channel_label = (getattr(app.state, "channel_name", None) or CHANNEL_NAME or "unknown").strip() or "unknown"
@@ -412,6 +416,17 @@ def queue_snapshot() -> List[Dict[str, Any]]:
         obj["pinned"] = bool(item.get("pinned", False))
         snapshot.append(obj)
     return snapshot
+
+
+def pending_comments_snapshot() -> List[Dict[str, Any]]:
+    return [dict(item) for item in pending_comments]
+
+
+def pop_pending_comment(comment_id: str) -> Optional[Dict[str, Any]]:
+    for idx, entry in enumerate(pending_comments):
+        if entry.get("id") == comment_id:
+            return pending_comments.pop(idx)
+    return None
 
 
 def _split_queue() -> Tuple[Optional[Dict[str, Any]], List[Dict[str, Any]]]:
@@ -605,6 +620,24 @@ async def handle_client_event(event: Any) -> None:
         if not isinstance(message_id, str):
             return
         await manager.broadcast({"type": "rumble", "id": message_id})
+    elif event_type == "pendingConfirm":
+        comment_id = event.get("id")
+        if not isinstance(comment_id, str):
+            return
+        spotlight = bool(event.get("spotlight", True))
+        twitch = bool(event.get("twitch", False))
+        entry = pop_pending_comment(comment_id)
+        if not entry:
+            return
+        await manager.broadcast({"type": "pendingComments", "items": pending_comments_snapshot()})
+        payload = dict(entry)
+        payload["custom"] = True
+        await broadcast_message(payload)
+        if spotlight:
+            push_highlight_queue(payload, move_to_front=True)
+            await broadcast_queue()
+        if twitch:
+            await enqueue_twitch_message(str(payload.get("text") or ""))
 
 
 async def twitch_chat_loop(username: str, token: str, channel: str) -> None:
@@ -953,7 +986,8 @@ async def comment_message(body: Dict[str, Any] = Body(...)) -> Dict[str, str]:
     payload = build_message_payload(user=user, text=text)
     payload["custom"] = True
 
-    await broadcast_message(payload)
+    pending_comments.append(payload)
+    await manager.broadcast({"type": "pendingComments", "items": pending_comments_snapshot()})
     return {"status": "ok", "id": payload["id"]}
 
 
@@ -1012,4 +1046,5 @@ async def reset_chat(request: Request) -> Dict[str, str]:
     reset_chat_state()
     await manager.broadcast({"type": "reset"})
     await broadcast_queue()
+    await manager.broadcast({"type": "pendingComments", "items": pending_comments_snapshot()})
     return {"status": "ok"}

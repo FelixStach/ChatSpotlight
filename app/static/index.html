@@ -85,8 +85,7 @@
     }
 
     .chat-panel {
-        radial-gradient(circle at 16% 22%, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0) 76%),
-        radial-gradient(circle at 90% 80%, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0) 80%),
+      background: var(--panel);
       overflow: hidden;
     }
 
@@ -506,6 +505,80 @@
       max-height: 90svh;
       max-height: 90dvh;
       overflow: hidden;
+    }
+
+    .pending-overlay {
+      z-index: 29;
+    }
+
+    .pending-card {
+      width: min(980px, 100%);
+      max-height: 86vh;
+      max-height: 86svh;
+      max-height: 86dvh;
+    }
+
+    .pending-body {
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      overflow: auto;
+      padding-right: 0.15rem;
+    }
+
+    .pending-empty {
+      color: var(--text-muted);
+      text-align: center;
+      padding: 0.5rem 0;
+      display: none;
+    }
+
+    .pending-empty[data-visible="true"] {
+      display: block;
+    }
+
+    .pending-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.7rem;
+    }
+
+    .pending-comment {
+      display: grid;
+      grid-template-columns: minmax(120px, 0.9fr) minmax(0, 2.2fr) auto auto auto;
+      gap: 0.75rem;
+      align-items: center;
+      padding: 0.75rem 0.9rem;
+      border-radius: 18px;
+      border: 1px solid var(--panel-border);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .pending-cell {
+      font-size: 0.98rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      min-width: 0;
+      word-break: break-word;
+    }
+
+    .pending-message {
+      font-weight: 500;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    @media (max-width: 900px) {
+      .pending-comment {
+        grid-template-columns: 1fr;
+        align-items: flex-start;
+      }
+
+      .pending-comment .toggle-pill,
+      .pending-comment .btn-primary {
+        width: fit-content;
+      }
     }
 
     .settings-head {
@@ -2526,6 +2599,29 @@
     </li>
   </template>
 
+  <template id="pending-comment-template">
+    <li class="pending-comment">
+      <div class="pending-cell pending-name" data-field="name"></div>
+      <div class="pending-cell pending-message" data-field="message"></div>
+      <button type="button" class="toggle-pill pending-spotlight" aria-pressed="true" data-i18n="queue.spotlight">Spotlight</button>
+      <button
+        type="button"
+        class="toggle-pill toggle-pill--twitch pending-twitch"
+        aria-pressed="false"
+        aria-label="Also send to Twitch"
+        data-i18n="actions.twitch"
+        data-i18n-attr="aria-label"
+        title=""
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M4 2h16v12l-4 4h-5l-3 3v-3H4V2Zm3 4v6h2V6H7Zm5 0v6h2V6h-2Z" />
+        </svg>
+        <span class="sr-only">Twitch</span>
+      </button>
+      <button type="button" class="btn-primary pending-confirm" data-i18n="pending.confirm">Confirm</button>
+    </li>
+  </template>
+
   <div id="auth-overlay" class="auth-overlay" role="dialog" aria-modal="true" aria-labelledby="auth-title">
     <div class="auth-card">
       <div class="auth-title" id="auth-title" data-i18n="auth.title">Moderator access required</div>
@@ -2742,6 +2838,39 @@
     </div>
   </div>
 
+  <div
+    id="pending-comments"
+    class="settings-overlay pending-overlay"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="pending-comments-title"
+  >
+    <div class="settings-card pending-card" role="document">
+      <div class="settings-head pending-head">
+        <div>
+          <div class="settings-title" id="pending-comments-title" data-i18n="pending.title">Pending comments</div>
+          <div class="settings-subtitle" data-i18n="pending.subtitle">Review comments before sending.</div>
+        </div>
+        <button
+          type="button"
+          class="settings-close"
+          id="pending-comments-close"
+          data-i18n="pending.close"
+          data-i18n-attr="aria-label"
+          aria-label="Close pending comments"
+        >
+          <svg viewBox="0 0 18 18" aria-hidden="true" focusable="false">
+            <path d="M4.5 4.5l9 9m0-9-9 9" />
+          </svg>
+        </button>
+      </div>
+      <div class="pending-body">
+        <div id="pending-comments-empty" class="pending-empty" data-i18n="pending.empty">No pending comments.</div>
+        <ul id="pending-comments-list" class="pending-list" role="list"></ul>
+      </div>
+    </div>
+  </div>
+
   <div id="reset-confirm" class="confirm-overlay" role="dialog" aria-modal="true" aria-labelledby="reset-title">
     <div class="confirm-card">
       <div class="confirm-meta">
@@ -2923,6 +3052,11 @@
     const resetOverlay = document.querySelector('#reset-confirm');
     const resetConfirmBtn = document.querySelector('#reset-confirm-btn');
     const resetCancelBtn = document.querySelector('#reset-cancel');
+    const pendingOverlay = document.querySelector('#pending-comments');
+    const pendingCloseBtn = document.querySelector('#pending-comments-close');
+    const pendingList = document.querySelector('#pending-comments-list');
+    const pendingTemplate = document.querySelector('#pending-comment-template');
+    const pendingEmpty = document.querySelector('#pending-comments-empty');
     const commentPinRow = document.querySelector('#comment-pin-row');
     const commentPinOpenBtn = document.querySelector('#comment-pin-open');
     const commentPinDialog = document.querySelector('#comment-pin-dialog');
@@ -3050,6 +3184,12 @@
         'settings.cookies.cleared': 'Cookies cleared',
         'settings.cookies.error': 'Unable to delete cookies',
         'settings.github.link': 'View project on GitHub',
+        'pending.title': 'Pending comments',
+        'pending.subtitle': 'Review comments before sending.',
+        'pending.close': 'Close pending comments',
+        'pending.empty': 'No pending comments.',
+        'pending.confirm': 'Confirm',
+        'pending.anonymous': 'Anonymous',
         'consent.title': 'Privacy notice',
         'consent.text':
           'This app loads external resources (Google Fonts, Twitch player, and Twitch CDN for emotes). Cookies/session storage are only stored after you accept. Accept to load external content.',
@@ -3129,6 +3269,12 @@
         'settings.cookies.cleared': 'Cookies gelöscht',
         'settings.cookies.error': 'Cookies konnten nicht gelöscht werden',
         'settings.github.link': 'Projekt auf GitHub ansehen',
+        'pending.title': 'Ausstehende Kommentare',
+        'pending.subtitle': 'Kommentare vor dem Senden prüfen.',
+        'pending.close': 'Ausstehende Kommentare schließen',
+        'pending.empty': 'Keine ausstehenden Kommentare.',
+        'pending.confirm': 'Bestätigen',
+        'pending.anonymous': 'Anonym',
         'consent.title': 'Datenschutzhinweis',
         'consent.text':
           'Diese App lädt externe Ressourcen (Google Fonts, Twitch-Player und Twitch-CDN für Emotes). Cookies/Session-Speicher werden erst nach deiner Zustimmung gespeichert. Zustimmung erforderlich, um externe Inhalte zu laden.',
@@ -3386,6 +3532,7 @@
     const isMobile = (window.matchMedia?.('(pointer: coarse)').matches) || (navigator.maxTouchPoints > 0);
     let pendingMessage = null;
     let composerOpen = false;
+    let pendingComments = [];
     let pendingSpotlight = true;
     let pendingTwitch = false;
     let twitchUsername = null;
@@ -3479,6 +3626,87 @@
       if (!resetOverlay) return;
       resetOverlay.setAttribute('data-open', 'true');
       if (resetConfirmBtn) resetConfirmBtn.focus({ preventScroll: true });
+    };
+
+    const openPendingPanel = () => {
+      if (!pendingOverlay) return;
+      pendingOverlay.setAttribute('data-open', 'true');
+      if (pendingCloseBtn) pendingCloseBtn.focus({ preventScroll: true });
+    };
+
+    const closePendingPanel = () => {
+      if (!pendingOverlay) return;
+      pendingOverlay.removeAttribute('data-open');
+    };
+
+    const togglePill = (btn) => {
+      if (!btn) return false;
+      const next = btn.getAttribute('aria-pressed') !== 'true';
+      btn.setAttribute('aria-pressed', next ? 'true' : 'false');
+      return next;
+    };
+
+    const sendPendingConfirm = (commentId, spotlight, twitch, confirmBtn) => {
+      if (!socket || socket.readyState !== WebSocket.OPEN) return;
+      if (confirmBtn) confirmBtn.disabled = true;
+      socket.send(JSON.stringify(withSession({ type: 'pendingConfirm', id: commentId, spotlight, twitch })));
+    };
+
+    const renderPendingComments = () => {
+      if (!pendingList || !pendingTemplate) return;
+      pendingList.innerHTML = '';
+      const hasItems = Array.isArray(pendingComments) && pendingComments.length > 0;
+      if (pendingEmpty) pendingEmpty.setAttribute('data-visible', hasItems ? 'false' : 'true');
+      if (!hasItems) return;
+
+      pendingComments.forEach((item) => {
+        if (!item || !item.id) return;
+        const node = pendingTemplate.content.firstElementChild.cloneNode(true);
+        node.dataset.commentId = item.id;
+
+        const nameEl = node.querySelector('[data-field="name"]');
+        const messageEl = node.querySelector('[data-field="message"]');
+        if (nameEl) nameEl.textContent = (item.user || '').toString().trim() || t('pending.anonymous');
+        if (messageEl) messageEl.textContent = (item.text || '').toString();
+
+        const spotlightBtn = node.querySelector('.pending-spotlight');
+        const twitchBtn = node.querySelector('.pending-twitch');
+        const confirmBtn = node.querySelector('.pending-confirm');
+
+        if (spotlightBtn) {
+          spotlightBtn.setAttribute('aria-pressed', 'true');
+          spotlightBtn.addEventListener('click', () => togglePill(spotlightBtn));
+        }
+
+        if (twitchBtn) {
+          twitchBtn.setAttribute('aria-pressed', 'false');
+          twitchBtn.addEventListener('click', () => togglePill(twitchBtn));
+        }
+
+        if (confirmBtn) {
+          confirmBtn.addEventListener('click', (evt) => {
+            evt.preventDefault();
+            const spotlight = spotlightBtn?.getAttribute('aria-pressed') === 'true';
+            const twitch = twitchBtn?.getAttribute('aria-pressed') === 'true';
+            ensureAuth(() => sendPendingConfirm(item.id, spotlight, twitch, confirmBtn));
+          });
+        }
+
+        pendingList.appendChild(node);
+      });
+    };
+
+    const setPendingComments = (items, { openOnNew = false } = {}) => {
+      const nextItems = Array.isArray(items) ? items : [];
+      const prevIds = new Set(pendingComments.map((entry) => entry?.id).filter(Boolean));
+      const hasNew = nextItems.some((entry) => entry?.id && !prevIds.has(entry.id));
+      pendingComments = nextItems;
+      renderPendingComments();
+      if (pendingComments.length === 0) {
+        closePendingPanel();
+        return;
+      }
+      if (openOnNew || hasNew) openPendingPanel();
     };
 
     const closeCommentPinDialog = () => {
@@ -3827,6 +4055,11 @@
         return;
       }
 
+      if (payload.type === 'pendingComments') {
+        setPendingComments(payload.items || []);
+        return;
+      }
+
       if (payload.type === 'reset') {
         handleResetPayload();
         return;
@@ -3994,6 +4227,7 @@
         if (settingsOverlay.getAttribute('data-open') !== 'true') return;
         if (resetOverlay?.getAttribute('data-open') === 'true') return;
         if (commentPinDialog?.getAttribute('data-open') === 'true') return;
+        if (pendingOverlay?.getAttribute('data-open') === 'true') return;
         if (evt.key === 'Escape') {
           evt.preventDefault();
           closeSettings();
@@ -4031,6 +4265,26 @@
         if (evt.key === 'Escape') {
           evt.preventDefault();
           closeResetConfirm();
+        }
+      });
+    }
+
+    if (pendingCloseBtn) {
+      pendingCloseBtn.addEventListener('click', (evt) => {
+        evt.preventDefault();
+        closePendingPanel();
+      });
+    }
+
+    if (pendingOverlay) {
+      pendingOverlay.addEventListener('click', (evt) => {
+        if (evt.target === pendingOverlay) closePendingPanel();
+      });
+      document.addEventListener('keydown', (evt) => {
+        if (pendingOverlay.getAttribute('data-open') !== 'true') return;
+        if (evt.key === 'Escape') {
+          evt.preventDefault();
+          closePendingPanel();
         }
       });
     }
@@ -4568,6 +4822,9 @@
       state.previousQueueIds = [];
       state.pinnedId = null;
       state.pendingRumbles.clear();
+      pendingComments = [];
+      renderPendingComments();
+      closePendingPanel();
       if (chatStream) chatStream.innerHTML = '';
       primeEmptyQueue();
     }
