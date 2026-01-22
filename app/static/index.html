@@ -542,6 +542,7 @@
       display: flex;
       flex-direction: column;
       gap: 0.7rem;
+      min-width: 760px;
     }
 
     .pending-comment {
@@ -570,14 +571,8 @@
     }
 
     @media (max-width: 900px) {
-      .pending-comment {
-        grid-template-columns: 1fr;
-        align-items: flex-start;
-      }
-
-      .pending-comment .toggle-pill,
-      .pending-comment .btn-primary {
-        width: fit-content;
+      .pending-body {
+        overflow-x: auto;
       }
     }
 
