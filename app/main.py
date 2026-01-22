@@ -26,6 +26,7 @@ USERNAME_FILE = CONFIG_DIR / "username.txt"
 CHANNEL_FILE = CONFIG_DIR / "channel.txt"
 TOKEN_FILE = CONFIG_DIR / "oauth_token.txt"
 PASSWORD_FILE = CONFIG_DIR / "password.txt"
+COMMENT_PIN_FILE = CONFIG_DIR / "comment_pin.txt"
 LOG_DIR = BASE_DIR / "logs"
 CHAT_LOG_FILE = LOG_DIR / "chat.log"
 
@@ -56,6 +57,7 @@ message_lookup: Dict[str, Dict[str, Any]] = {}
 highlight_queue: List[Dict[str, Any]] = []
 active_sessions: Dict[str, float] = {}
 ADMIN_PASSWORD: Optional[str] = None
+COMMENT_PIN: Optional[str] = None
 twitch_send_queue: Optional[asyncio.Queue[str]] = None
 logged_ids: Deque[str] = deque(maxlen=5000)
 logged_id_set: Set[str] = set()
@@ -117,6 +119,24 @@ def load_admin_password() -> str:
         return ADMIN_PASSWORD
     ADMIN_PASSWORD = required_file(PASSWORD_FILE, "moderator password")
     return ADMIN_PASSWORD
+
+
+def load_comment_pin() -> str:
+    global COMMENT_PIN
+    COMMENT_PIN = required_file(COMMENT_PIN_FILE, "comment pin")
+    return COMMENT_PIN
+
+
+def get_comment_pin() -> str:
+    global COMMENT_PIN
+    if COMMENT_PIN is None:
+        return load_comment_pin()
+    return COMMENT_PIN
+
+
+def set_comment_pin(pin: str) -> None:
+    global COMMENT_PIN
+    COMMENT_PIN = pin
 
 
 def _now_ts() -> float:
@@ -200,6 +220,12 @@ async def root() -> FileResponse:
 @app.get("/overlay", response_class=FileResponse)
 async def overlay() -> FileResponse:
     return FileResponse(STATIC_DIR / "overlay.html")
+
+
+@app.get("/comment", response_class=FileResponse)
+@app.get("/comment/", response_class=FileResponse)
+async def comment() -> FileResponse:
+    return FileResponse(STATIC_DIR / "comment.html")
 
 
 @app.websocket("/ws/chat")
@@ -717,6 +743,7 @@ async def startup_event() -> None:
     global CHANNEL_NAME
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     load_admin_password()
+    load_comment_pin()
     if USE_FAKE_STREAM:
         app.state.chat_task = asyncio.create_task(fake_chat_loop())
         mode = "fake"
@@ -856,6 +883,61 @@ async def custom_message(request: Request, body: Dict[str, Any] = Body(...)) -> 
     if twitch:
         await enqueue_twitch_message(text)
     return {"status": "ok", "id": payload["id"]}
+
+
+@app.post("/api/comment-message")
+async def comment_message(body: Dict[str, Any] = Body(...)) -> Dict[str, str]:
+    if not isinstance(body, dict):
+        raise HTTPException(status_code=400, detail="Invalid payload")
+
+    raw_pin = str(body.get("pin") or "").strip()
+    if len(raw_pin) != 4:
+        raise HTTPException(status_code=400, detail="pin must be 4 characters")
+
+    expected = get_comment_pin()
+    if not hmac.compare_digest(raw_pin, expected):
+        raise HTTPException(status_code=403, detail="Invalid pin")
+
+    raw_user = str(body.get("user") or "").strip()
+    raw_text = str(body.get("text") or "").strip()
+
+    if not raw_text:
+        raise HTTPException(status_code=400, detail="text is required")
+
+    user = raw_user[:48] if raw_user else "Anonymous"
+    text = raw_text[:500]
+
+    payload = build_message_payload(user=user, text=text)
+    payload["custom"] = True
+
+    await broadcast_message(payload)
+    return {"status": "ok", "id": payload["id"]}
+
+
+@app.post("/api/comment-pin")
+async def update_comment_pin(request: Request, body: Dict[str, Any] = Body(...)) -> Dict[str, str]:
+    token = _extract_session_token(request)
+    if not _validate_session(token):
+        raise HTTPException(status_code=401, detail="Authentication required")
+    if not isinstance(body, dict):
+        raise HTTPException(status_code=400, detail="Invalid payload")
+
+    raw_pin = str(body.get("pin") or "").strip()
+    if len(raw_pin) != 4:
+        raise HTTPException(status_code=400, detail="pin must be 4 characters")
+
+    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+    COMMENT_PIN_FILE.write_text(f"{raw_pin}\n", encoding="utf-8")
+    set_comment_pin(raw_pin)
+    return {"status": "ok"}
+
+
+@app.get("/api/comment-pin")
+async def read_comment_pin(request: Request) -> Dict[str, str]:
+    token = _extract_session_token(request)
+    if not _validate_session(token):
+        raise HTTPException(status_code=401, detail="Authentication required")
+    return {"pin": get_comment_pin()}
 
 
 @app.post("/api/reset")

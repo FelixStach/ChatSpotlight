@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Chat Spotlight · Comment</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: 'Space Grotesk', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --bg:
+        radial-gradient(circle at 18% 12%, rgba(66, 82, 152, 0.7), rgba(66, 82, 152, 0) 54%),
+        radial-gradient(circle at 82% 18%, rgba(50, 64, 132, 0.6), rgba(50, 64, 132, 0) 58%),
+        radial-gradient(circle at 32% 78%, rgba(34, 44, 104, 0.58), rgba(34, 44, 104, 0) 62%),
+        radial-gradient(circle at 74% 62%, rgba(42, 52, 120, 0.48), rgba(42, 52, 120, 0) 64%),
+        linear-gradient(140deg, rgba(26, 32, 70, 0.99) 0%, rgba(11, 14, 30, 1) 62%, #03040a 100%);
+      --panel: rgba(11, 13, 28, 0.92);
+      --panel-border: rgba(255, 255, 255, 0.08);
+      --accent: #f8d477;
+      --accent-soft: rgba(248, 212, 119, 0.16);
+      --text-primary: #f5f6fc;
+      --text-muted: rgba(245, 246, 252, 0.68);
+      --shadow-soft: 0 35px 65px rgba(0, 0, 0, 0.55);
+      --success: #7bd88f;
+      --danger: #f28b82;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      min-height: 100%;
+      background-color: #070812;
+      background-image: var(--bg);
+      background-attachment: fixed;
+    }
+
+    body {
+      color: var(--text-primary);
+      font-family: 'Space Grotesk', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: clamp(1rem, 2vw, 2.5rem);
+    }
+
+    .comment-shell {
+      width: min(960px, 100%);
+    }
+
+    .comment-card {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 32px;
+      padding: clamp(1.5rem, 3vw, 2.5rem);
+      box-shadow: var(--shadow-soft);
+      backdrop-filter: blur(18px);
+      display: grid;
+      gap: 1.5rem;
+      max-height: min(90vh, 900px);
+      overflow: auto;
+    }
+
+    .comment-header {
+      display: grid;
+      gap: 0.5rem;
+    }
+
+    .comment-title {
+      font-size: clamp(1.6rem, 2.4vw, 2.2rem);
+      font-weight: 700;
+    }
+
+    .comment-subtitle {
+      color: var(--text-muted);
+      font-size: 1rem;
+      line-height: 1.5;
+    }
+
+    .comment-form {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .field {
+      display: grid;
+      gap: 0.45rem;
+    }
+
+    label {
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .field input,
+    .field textarea {
+      width: 100%;
+      border-radius: 14px;
+      border: 1px solid var(--panel-border);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-primary);
+      padding: 0.75rem 0.9rem;
+      font-size: 1rem;
+      font-family: inherit;
+      transition: border-color 180ms ease, box-shadow 180ms ease;
+    }
+
+    .field input:focus,
+    .field textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(248, 212, 119, 0.15);
+    }
+
+    .pin-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.9rem;
+    }
+
+    .pin-grid {
+      display: flex;
+      gap: 0.8rem;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: nowrap;
+    }
+
+    .pin-cell {
+      width: 54px;
+      height: 54px;
+      border-radius: 16px;
+      border: 1px solid var(--panel-border);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 1.3rem;
+      font-weight: 700;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      caret-color: transparent;
+      transition: border-color 180ms ease, box-shadow 180ms ease;
+    }
+
+    .pin-cell:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(248, 212, 119, 0.15);
+    }
+
+    textarea {
+      min-height: 140px;
+      resize: vertical;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .send-button {
+      border: 1px solid rgba(248, 180, 88, 0.5);
+      background: linear-gradient(135deg, rgba(248, 212, 119, 0.16), rgba(140, 88, 18, 0.2));
+      color: #fcebc2;
+      border-radius: 12px;
+      padding: 0.55rem 1.1rem;
+      cursor: pointer;
+      font-weight: 700;
+      transition:
+        background 140ms ease,
+        border-color 140ms ease,
+        transform 120ms ease,
+        box-shadow 140ms ease,
+        color 140ms ease;
+      box-shadow: 0 8px 18px rgba(248, 180, 88, 0.18);
+    }
+
+    .send-button:hover {
+      border-color: rgba(248, 180, 88, 0.65);
+      background: linear-gradient(135deg, rgba(248, 212, 119, 0.28), rgba(140, 88, 18, 0.28));
+      box-shadow: 0 10px 22px rgba(248, 180, 88, 0.28);
+    }
+
+    .send-button:active {
+      transform: translateY(1px);
+    }
+
+    .status {
+      min-height: 1.2rem;
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      margin-right: auto;
+    }
+
+    .status[data-state="success"] {
+      color: var(--success);
+    }
+
+    .status[data-state="error"] {
+      color: var(--danger);
+    }
+
+    @media (max-width: 720px) {
+      .comment-card {
+        border-radius: 24px;
+        gap: 1.1rem;
+      }
+
+      .comment-form {
+        gap: 0.9rem;
+      }
+
+      .pin-wrap {
+        flex-direction: column;
+        gap: 0.6rem;
+      }
+
+      .pin-grid {
+        gap: 0.55rem;
+      }
+
+      .pin-cell {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        font-size: 1.1rem;
+      }
+
+      textarea {
+        min-height: 120px;
+      }
+
+      .actions {
+        flex-direction: row;
+        align-items: center;
+      }
+
+      .send-button {
+        width: auto;
+        text-align: center;
+      }
+
+      .status {
+        margin-right: auto;
+        text-align: left;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="comment-shell">
+    <section class="comment-card" aria-live="polite">
+      <header class="comment-header">
+        <h1 class="comment-title" data-i18n="comment.title">Kommentar senden</h1>
+      </header>
+
+      <form id="comment-form" class="comment-form" autocomplete="off">
+        <div class="pin-wrap">
+          <label data-i18n="comment.pin.label">PIN</label>
+          <div class="pin-grid" aria-label="PIN" data-i18n-attr="aria-label" data-i18n="comment.pin.label">
+            <input class="pin-cell comment-pin-digit" type="text" inputmode="text" maxlength="1" aria-label="PIN digit 1" data-index="0" />
+            <input class="pin-cell comment-pin-digit" type="text" inputmode="text" maxlength="1" aria-label="PIN digit 2" data-index="1" />
+            <input class="pin-cell comment-pin-digit" type="text" inputmode="text" maxlength="1" aria-label="PIN digit 3" data-index="2" />
+            <input class="pin-cell comment-pin-digit" type="text" inputmode="text" maxlength="1" aria-label="PIN digit 4" data-index="3" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="comment-username" data-i18n="comment.username.label">Name</label>
+          <input id="comment-username" name="username" type="text" maxlength="48" />
+        </div>
+        <div class="field">
+          <label for="comment-message" data-i18n="comment.message.label">Kommentar</label>
+          <textarea
+            id="comment-message"
+            name="message"
+            data-i18n="comment.message.placeholder"
+            data-i18n-attr="placeholder"
+            placeholder="Schreibe deinen Kommentar"
+          ></textarea>
+        </div>
+        <div class="actions">
+          <div id="comment-status" class="status" aria-live="polite"></div>
+          <button type="submit" class="send-button" data-i18n="comment.send">Senden</button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <script type="module">
+    const LANGUAGE_STORAGE_KEY = 'chatspotlight-lang';
+    const DEFAULT_LANG = 'de';
+
+    const translations = {
+      en: {
+        'comment.title': 'Send a comment',
+        'comment.username.label': 'Name',
+        'comment.username.default': 'Anonymous',
+        'comment.pin.label': 'PIN',
+        'comment.pin.placeholder': '4 characters',
+        'comment.message.label': 'Comment',
+        'comment.message.placeholder': 'Write your comment',
+        'comment.send': 'Send',
+        'comment.status.sent': 'Comment sent.',
+        'comment.status.pinInvalid': 'PIN must be 4 characters.',
+        'comment.status.pinWrong': 'PIN is incorrect.',
+        'comment.status.textMissing': 'Please enter a comment.',
+        'comment.status.error': 'Unable to send comment. Try again.',
+      },
+      de: {
+        'comment.title': 'Kommentar senden',
+        'comment.username.label': 'Name',
+        'comment.username.default': 'Anonym',
+        'comment.pin.label': 'PIN',
+        'comment.pin.placeholder': '4 Zeichen',
+        'comment.message.label': 'Kommentar',
+        'comment.message.placeholder': 'Schreibe deinen Kommentar',
+        'comment.send': 'Senden',
+        'comment.status.sent': 'Kommentar gesendet.',
+        'comment.status.pinInvalid': 'PIN muss 4 Zeichen haben.',
+        'comment.status.pinWrong': 'PIN ist falsch.',
+        'comment.status.textMissing': 'Bitte einen Kommentar eingeben.',
+        'comment.status.error': 'Kommentar konnte nicht gesendet werden.',
+      },
+    };
+
+    let currentLang = localStorage.getItem(LANGUAGE_STORAGE_KEY) || DEFAULT_LANG;
+
+    const t = (key) => {
+      const table = translations[currentLang] || translations.en || {};
+      const fallback = translations.en || {};
+      return table[key] ?? fallback[key] ?? key;
+    };
+
+    const applyTranslations = () => {
+      document.querySelectorAll('[data-i18n]').forEach((el) => {
+        const key = el.dataset.i18n;
+        const attr = el.dataset.i18nAttr;
+        const value = t(key);
+        if (attr) {
+          el.setAttribute(attr, value);
+        } else {
+          el.textContent = value;
+        }
+      });
+    };
+
+    const commentForm = document.querySelector('#comment-form');
+    const usernameInput = document.querySelector('#comment-username');
+    const pinInputs = Array.from(document.querySelectorAll('.comment-pin-digit'));
+    const messageInput = document.querySelector('#comment-message');
+    const statusEl = document.querySelector('#comment-status');
+
+    const setStatus = (key, state = 'info') => {
+      if (!statusEl) return;
+      statusEl.textContent = t(key);
+      statusEl.dataset.state = state;
+    };
+
+    const ensureUsernameDefault = () => {
+      if (!usernameInput) return;
+      if (!usernameInput.value.trim()) {
+        usernameInput.value = t('comment.username.default');
+      }
+    };
+
+    applyTranslations();
+    ensureUsernameDefault();
+
+    const getPinValue = () => pinInputs.map((input) => (input.value || '').trim()).join('');
+
+    if (pinInputs.length) {
+      const focusAt = (idx) => {
+        const target = pinInputs[idx];
+        if (target) target.focus({ preventScroll: true });
+      };
+
+      const handlePaste = (value, startIndex) => {
+        const clean = (value || '').replace(/\s+/g, '').slice(0, 4 - startIndex);
+        if (!clean) return;
+        clean.split('').forEach((char, offset) => {
+          const input = pinInputs[startIndex + offset];
+          if (input) input.value = char;
+        });
+        const nextIndex = Math.min(startIndex + clean.length, pinInputs.length - 1);
+        focusAt(nextIndex);
+        if (startIndex + clean.length >= pinInputs.length) {
+          pinInputs[pinInputs.length - 1]?.blur();
+        }
+      };
+
+      pinInputs.forEach((input, idx) => {
+        input.addEventListener('focus', () => {
+          input.select?.();
+        });
+
+        input.addEventListener('keydown', (evt) => {
+          const { key } = evt;
+          if (key === 'Tab') return;
+          if (key === 'ArrowLeft') {
+            evt.preventDefault();
+            if (idx > 0) focusAt(idx - 1);
+            return;
+          }
+          if (key === 'ArrowRight') {
+            evt.preventDefault();
+            if (idx < pinInputs.length - 1) focusAt(idx + 1);
+            return;
+          }
+          if (key === 'Backspace') {
+            evt.preventDefault();
+            if (input.value) {
+              input.value = '';
+              return;
+            }
+            if (idx > 0) {
+              focusAt(idx - 1);
+              pinInputs[idx - 1].value = '';
+            }
+            return;
+          }
+          if (key.length === 1 && !evt.ctrlKey && !evt.metaKey && !evt.altKey) {
+            evt.preventDefault();
+            input.value = key;
+            if (idx < pinInputs.length - 1) {
+              focusAt(idx + 1);
+            } else {
+              input.blur();
+            }
+          }
+        });
+
+        input.addEventListener('paste', (evt) => {
+          evt.preventDefault();
+          const text = evt.clipboardData?.getData('text') || '';
+          handlePaste(text, idx);
+        });
+      });
+    }
+
+    if (commentForm) {
+      commentForm.addEventListener('submit', async (evt) => {
+        evt.preventDefault();
+        const pin = getPinValue();
+        const text = (messageInput?.value || '').trim();
+        const user = (usernameInput?.value || '').trim() || t('comment.username.default');
+
+        if (pin.length !== 4 || pinInputs.some((input) => !input.value)) {
+          setStatus('comment.status.pinInvalid', 'error');
+          pinInputs.forEach((input) => input.setAttribute('aria-invalid', 'true'));
+          return;
+        }
+        pinInputs.forEach((input) => input.removeAttribute('aria-invalid'));
+
+        if (!text) {
+          setStatus('comment.status.textMissing', 'error');
+          return;
+        }
+
+        try {
+          const baseUrl = new URL('.', window.location.href);
+          const apiUrl = new URL('api/comment-message', baseUrl);
+          const resp = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user, text, pin }),
+          });
+          if (resp.status === 403) {
+            setStatus('comment.status.pinWrong', 'error');
+            return;
+          }
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          setStatus('comment.status.sent', 'success');
+          messageInput.value = '';
+        } catch (err) {
+          console.error('Failed to send comment', err);
+          setStatus('comment.status.error', 'error');
+        }
+      });
+    }
+  </script>
+</body>
+</html>

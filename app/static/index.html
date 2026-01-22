@@ -599,6 +599,83 @@
       transition: color 140ms ease, opacity 140ms ease;
       opacity: 0.82;
     }
+    .setting-field {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .setting-input {
+      min-width: 140px;
+      padding: 0.55rem 0.7rem;
+      border-radius: 12px;
+      border: 1px solid var(--panel-border);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-primary);
+      font-family: inherit;
+      font-weight: 600;
+      letter-spacing: 0.22em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .setting-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(248, 212, 119, 0.2);
+    }
+
+    .pin-grid {
+      display: flex;
+      gap: 0.8rem;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: nowrap;
+    }
+
+    .pin-cell {
+      width: 54px;
+      height: 54px;
+      border-radius: 16px;
+      border: 1px solid var(--panel-border);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 1.3rem;
+      font-weight: 700;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      caret-color: transparent;
+      transition: border-color 180ms ease, box-shadow 180ms ease;
+    }
+
+    .pin-cell:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(248, 212, 119, 0.2);
+    }
+
+    .setting-status {
+      min-height: 1.1rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 0.35rem;
+    }
+
+    .setting-status:empty {
+      display: none;
+    }
+
+    .setting-status[data-state="success"] {
+      color: #7bd88f;
+    }
+
+    .setting-status[data-state="error"] {
+      color: #f28b82;
+    }
 
     .settings-link:hover {
       color: var(--text-primary);
@@ -918,6 +995,25 @@
       overflow-y: auto;
       white-space: pre-wrap;
       word-break: break-word;
+    }
+
+    .confirm-form {
+      display: grid;
+      gap: 0.9rem;
+      margin-top: 0.9rem;
+    }
+
+    .confirm-form .setting-status {
+      margin-top: 0;
+    }
+
+    .comment-pin-actions {
+      margin-top: 0.9rem;
+    }
+
+    .confirm-form .setting-input {
+      width: min(220px, 100%);
+      justify-self: flex-start;
     }
 
     .sr-only {
@@ -2429,6 +2525,27 @@
         </div>
         <div class="setting-row">
           <div>
+            <div class="setting-label" data-i18n="settings.commentPin.label">Comment PIN</div>
+            <div class="setting-hint" data-i18n="settings.commentPin.hint">Set the 4-character PIN for the comment page.</div>
+          </div>
+          <button
+            type="button"
+            class="btn-secondary"
+            id="comment-pin-open"
+            data-i18n="settings.commentPin.action"
+            data-i18n-attr="aria-label"
+            aria-label="Change comment PIN"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="18" height="18">
+              <path
+                fill="currentColor"
+                d="M14.5 2a6.5 6.5 0 0 0-5.96 9.12l-6.3 6.3a1 1 0 0 0-.3.7V20a1 1 0 0 0 1 1h2.1a1 1 0 0 0 1-1v-1.1h1.1a1 1 0 0 0 1-1v-1.1h1.1a1 1 0 0 0 .7-.3l2.4-2.4A6.5 6.5 0 1 0 14.5 2Zm0 3a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7Z"
+              />
+            </svg>
+          </button>
+        </div>
+        <div class="setting-row">
+          <div>
             <div class="setting-label" data-i18n="settings.overlay.label">Overlay</div>
             <div class="setting-hint" data-i18n="settings.overlay.hint">Open the stream overlay page.</div>
           </div>
@@ -2558,6 +2675,60 @@
     </div>
   </div>
 
+  <div id="comment-pin-dialog" class="confirm-overlay" role="dialog" aria-modal="true" aria-labelledby="comment-pin-title">
+    <div class="confirm-card">
+      <div class="confirm-meta">
+        <span aria-live="polite" data-i18n="settings.commentPin.meta">Admin action</span>
+        <span class="confirm-hint" data-i18n="settings.commentPin.hintShort">Esc to cancel</span>
+      </div>
+      <div class="confirm-title" id="comment-pin-title" data-i18n="settings.commentPin.title">Change comment PIN</div>
+      <div class="confirm-preview" data-i18n="settings.commentPin.dialogHint">
+        Set a new 4-character PIN for the comment page.
+      </div>
+      <form id="comment-pin-form" class="confirm-form" autocomplete="off">
+        <div class="pin-grid" aria-label="Comment PIN" data-i18n-attr="aria-label" data-i18n="settings.commentPin.label">
+          <input
+            class="pin-cell comment-pin-digit"
+            type="text"
+            inputmode="text"
+            maxlength="1"
+            aria-label="PIN digit 1"
+            data-index="0"
+          />
+          <input
+            class="pin-cell comment-pin-digit"
+            type="text"
+            inputmode="text"
+            maxlength="1"
+            aria-label="PIN digit 2"
+            data-index="1"
+          />
+          <input
+            class="pin-cell comment-pin-digit"
+            type="text"
+            inputmode="text"
+            maxlength="1"
+            aria-label="PIN digit 3"
+            data-index="2"
+          />
+          <input
+            class="pin-cell comment-pin-digit"
+            type="text"
+            inputmode="text"
+            maxlength="1"
+            aria-label="PIN digit 4"
+            data-index="3"
+          />
+        </div>
+        <span id="comment-pin-status" class="setting-status" aria-live="polite"></span>
+        <div class="confirm-actions comment-pin-actions">
+          <button type="button" class="btn-secondary" id="comment-pin-cancel" data-i18n="settings.commentPin.cancel">Cancel</button>
+          <button type="submit" class="btn-primary" id="comment-pin-save" data-i18n="settings.commentPin.save">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <div id="custom-confirm" class="confirm-overlay" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
     <div class="confirm-card">
       <div class="confirm-meta">
@@ -2645,6 +2816,12 @@
     const resetOverlay = document.querySelector('#reset-confirm');
     const resetConfirmBtn = document.querySelector('#reset-confirm-btn');
     const resetCancelBtn = document.querySelector('#reset-cancel');
+    const commentPinOpenBtn = document.querySelector('#comment-pin-open');
+    const commentPinDialog = document.querySelector('#comment-pin-dialog');
+    const commentPinForm = document.querySelector('#comment-pin-form');
+    const commentPinInputs = Array.from(document.querySelectorAll('.comment-pin-digit'));
+    const commentPinStatus = document.querySelector('#comment-pin-status');
+    const commentPinCancelBtn = document.querySelector('#comment-pin-cancel');
     const clearCookiesBtn = document.querySelector('#clear-cookies');
     const clearCookiesLabel = clearCookiesBtn?.querySelector('.sr-only') || null;
     const clearCookiesStatus = document.querySelector('#clear-cookies-status');
@@ -2662,6 +2839,7 @@
     const apiSessionUrl = new URL('api/session', baseUrl);
     const apiSessionClearUrl = new URL('api/session/clear', baseUrl);
     const apiCustomMessageUrl = new URL('api/custom-message', baseUrl);
+    const apiCommentPinUrl = new URL('api/comment-pin', baseUrl);
     const apiResetUrl = new URL('api/reset', baseUrl);
     const wsUrl = new URL('ws/chat', baseUrl);
     wsUrl.protocol = wsUrl.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -2716,6 +2894,19 @@
         'settings.subtitle': 'Manage language and preferences.',
         'settings.language.label': 'Language',
         'settings.language.hint': 'Choose UI language (default: German).',
+        'settings.commentPin.label': 'Comment PIN',
+        'settings.commentPin.hint': 'Set the 4-character PIN for the comment page.',
+        'settings.commentPin.action': 'Change PIN',
+        'settings.commentPin.placeholder': '4 characters',
+        'settings.commentPin.success': 'PIN updated.',
+        'settings.commentPin.invalid': 'PIN must be 4 characters.',
+        'settings.commentPin.error': 'Unable to update PIN.',
+        'settings.commentPin.meta': 'Admin action',
+        'settings.commentPin.hintShort': 'Esc to cancel',
+        'settings.commentPin.title': 'Change comment PIN',
+        'settings.commentPin.dialogHint': 'Set a new 4-character PIN for the comment page.',
+        'settings.commentPin.cancel': 'Cancel',
+        'settings.commentPin.save': 'Save',
         'settings.close': 'Close settings',
         'settings.trigger': 'Settings',
         'settings.triggerTooltip': 'Open settings',
@@ -2780,6 +2971,19 @@
         'settings.subtitle': 'Sprache und Präferenzen verwalten.',
         'settings.language.label': 'Sprache',
         'settings.language.hint': 'UI-Sprache wählen (Standard: Deutsch).',
+        'settings.commentPin.label': 'Kommentar-PIN',
+        'settings.commentPin.hint': 'Lege die 4-stellige PIN für die Kommentar-Seite fest.',
+        'settings.commentPin.action': 'PIN ändern',
+        'settings.commentPin.placeholder': '4 Zeichen',
+        'settings.commentPin.success': 'PIN aktualisiert.',
+        'settings.commentPin.invalid': 'PIN muss 4 Zeichen haben.',
+        'settings.commentPin.error': 'PIN konnte nicht gespeichert werden.',
+        'settings.commentPin.meta': 'Admin-Aktion',
+        'settings.commentPin.hintShort': 'Esc zum Abbrechen',
+        'settings.commentPin.title': 'Kommentar-PIN ändern',
+        'settings.commentPin.dialogHint': 'Lege eine neue 4-stellige PIN für die Kommentar-Seite fest.',
+        'settings.commentPin.cancel': 'Abbrechen',
+        'settings.commentPin.save': 'Speichern',
         'settings.close': 'Einstellungen schließen',
         'settings.trigger': 'Einstellungen',
         'settings.triggerTooltip': 'Einstellungen öffnen',
@@ -3151,6 +3355,55 @@
       if (resetConfirmBtn) resetConfirmBtn.focus({ preventScroll: true });
     };
 
+    const closeCommentPinDialog = () => {
+      if (!commentPinDialog) return;
+      commentPinDialog.removeAttribute('data-open');
+      if (commentPinForm) commentPinForm.reset();
+      if (commentPinStatus) {
+        commentPinStatus.textContent = '';
+        commentPinStatus.dataset.state = '';
+      }
+      commentPinInputs.forEach((input) => input.removeAttribute('aria-invalid'));
+    };
+
+    const openCommentPinDialog = async () => {
+      if (!commentPinDialog) return;
+      commentPinDialog.setAttribute('data-open', 'true');
+      if (commentPinInputs[0]) commentPinInputs[0].focus({ preventScroll: true });
+      await loadCommentPinForDialog();
+    };
+
+    const getPinValue = () => commentPinInputs.map((input) => (input.value || '').trim()).join('');
+
+    const setPinValue = (value) => {
+      const safe = (value || '').toString();
+      commentPinInputs.forEach((input, idx) => {
+        input.value = safe[idx] ? safe[idx] : '';
+      });
+    };
+
+    const loadCommentPinForDialog = async () => {
+      if (!commentPinInputs.length) return;
+      try {
+        const resp = await fetch(apiCommentPinUrl, {
+          headers: {
+            [SESSION_HEADER]: authToken || '',
+          },
+        });
+        if (resp.status === 401 || resp.status === 403) {
+          setAuthToken(null);
+          closeCommentPinDialog();
+          openAuthModal(() => openCommentPinDialog());
+          return;
+        }
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const data = await resp.json();
+        setPinValue(data?.pin || '');
+      } catch (err) {
+        console.error('Failed to load comment PIN', err);
+      }
+    };
+
     const submitReset = async () => {
       try {
         const resp = await fetch(apiResetUrl, {
@@ -3285,6 +3538,53 @@
           clearCookiesStatus.textContent = '';
         }
       }, delay);
+    };
+
+    const flashCommentPinState = (key, state = 'info', delay = COOKIE_RESET_DELAY_MS) => {
+      if (!commentPinStatus) return;
+      commentPinStatus.textContent = t(key);
+      commentPinStatus.dataset.state = state;
+      setTimeout(() => {
+        if (commentPinStatus) {
+          commentPinStatus.textContent = '';
+          commentPinStatus.dataset.state = '';
+        }
+      }, delay);
+    };
+
+    const submitCommentPin = async () => {
+      const pin = getPinValue();
+      if (pin.length !== 4 || commentPinInputs.some((input) => !input.value)) {
+        commentPinInputs.forEach((input) => input.setAttribute('aria-invalid', 'true'));
+        flashCommentPinState('settings.commentPin.invalid', 'error');
+        return;
+      }
+      commentPinInputs.forEach((input) => input.removeAttribute('aria-invalid'));
+
+      try {
+        const resp = await fetch(apiCommentPinUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            [SESSION_HEADER]: authToken || '',
+          },
+          body: JSON.stringify({ pin }),
+        });
+        if (resp.status === 401 || resp.status === 403) {
+          setAuthToken(null);
+          openAuthModal(() => submitCommentPin());
+          return;
+        }
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        commentPinInputs.forEach((input) => {
+          input.value = '';
+        });
+        flashCommentPinState('settings.commentPin.success', 'success');
+        closeCommentPinDialog();
+      } catch (err) {
+        console.error('Failed to update comment PIN', err);
+        flashCommentPinState('settings.commentPin.error', 'error');
+      }
     };
 
     const handleClearCookies = () => {
@@ -3498,6 +3798,7 @@
       document.addEventListener('keydown', (evt) => {
         if (settingsOverlay.getAttribute('data-open') !== 'true') return;
         if (resetOverlay?.getAttribute('data-open') === 'true') return;
+        if (commentPinDialog?.getAttribute('data-open') === 'true') return;
         if (evt.key === 'Escape') {
           evt.preventDefault();
           closeSettings();
@@ -4316,6 +4617,112 @@
         clearCookiesBtn.addEventListener('click', (evt) => {
           evt.preventDefault();
           handleClearCookies();
+        });
+      }
+
+      if (commentPinOpenBtn) {
+        commentPinOpenBtn.addEventListener('click', (evt) => {
+          evt.preventDefault();
+          ensureAuth(() => openCommentPinDialog());
+        });
+      }
+
+      if (commentPinCancelBtn) {
+        commentPinCancelBtn.addEventListener('click', (evt) => {
+          evt.preventDefault();
+          closeCommentPinDialog();
+        });
+      }
+
+      if (commentPinDialog) {
+        commentPinDialog.addEventListener('click', (evt) => {
+          if (evt.target === commentPinDialog) closeCommentPinDialog();
+        });
+
+        document.addEventListener('keydown', (evt) => {
+          if (commentPinDialog.getAttribute('data-open') !== 'true') return;
+          if (evt.key === 'Escape') {
+            evt.preventDefault();
+            closeCommentPinDialog();
+            openSettings();
+          }
+        });
+      }
+
+      if (commentPinInputs.length) {
+        const focusAt = (idx) => {
+          const target = commentPinInputs[idx];
+          if (target) target.focus({ preventScroll: true });
+        };
+
+        const handlePaste = (value, startIndex) => {
+          const clean = (value || '').replace(/\s+/g, '').slice(0, 4 - startIndex);
+          if (!clean) return;
+          clean.split('').forEach((char, offset) => {
+            const input = commentPinInputs[startIndex + offset];
+            if (input) input.value = char;
+          });
+          const nextIndex = Math.min(startIndex + clean.length, commentPinInputs.length - 1);
+          focusAt(nextIndex);
+          if (startIndex + clean.length >= commentPinInputs.length) {
+            commentPinInputs[commentPinInputs.length - 1]?.blur();
+          }
+        };
+
+        commentPinInputs.forEach((input, idx) => {
+          input.addEventListener('focus', () => {
+            input.select?.();
+          });
+
+          input.addEventListener('keydown', (evt) => {
+            const { key } = evt;
+            if (key === 'Tab') return;
+            if (key === 'ArrowLeft') {
+              evt.preventDefault();
+              if (idx > 0) focusAt(idx - 1);
+              return;
+            }
+            if (key === 'ArrowRight') {
+              evt.preventDefault();
+              if (idx < commentPinInputs.length - 1) focusAt(idx + 1);
+              return;
+            }
+            if (key === 'Backspace') {
+              evt.preventDefault();
+              if (input.value) {
+                input.value = '';
+                return;
+              }
+              if (idx > 0) {
+                focusAt(idx - 1);
+                commentPinInputs[idx - 1].value = '';
+              }
+              return;
+            }
+
+            if (key.length === 1 && !evt.ctrlKey && !evt.metaKey && !evt.altKey) {
+              evt.preventDefault();
+              input.value = key;
+              if (idx < commentPinInputs.length - 1) {
+                focusAt(idx + 1);
+              } else {
+                input.blur();
+              }
+            }
+          });
+
+          input.addEventListener('paste', (evt) => {
+            evt.preventDefault();
+            const text = evt.clipboardData?.getData('text') || '';
+            handlePaste(text, idx);
+          });
+        });
+      }
+
+      if (commentPinForm) {
+        commentPinForm.addEventListener('submit', (evt) => {
+          evt.preventDefault();
+          submitCommentPin();
         });
       }
 
